@@ -1,0 +1,253 @@
+/* Khung giao diện chính */
+.lms-container {
+  min-height: 100vh;
+  background-color: #f5f7fa;
+  font-family: Arial, sans-serif;
+}
+
+/* Thanh Navbar ngang phía trên */
+.lms-navbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: #ffffff;
+  height: 65px;
+  padding: 0 30px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  position: relative;
+}
+
+.navbar-left {
+  display: flex;
+  align-items: center;
+  gap: 30px;
+}
+
+.nav-logo {
+  width: 45px;
+  height: 45px;
+  background-color: #008b44;
+  color: white;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  font-size: 16px;
+}
+
+.nav-item {
+  color: #555555;
+  text-decoration: none;
+  font-size: 15px;
+  cursor: pointer;
+  padding: 8px 0;
+  transition: color 0.2s;
+  background: none;
+  border: none;
+}
+
+.nav-item:hover {
+  color: #008b44;
+}
+
+.nav-item.active {
+  font-weight: bold;
+  color: #008b44;
+  border-bottom: 3px solid #008b44;
+}
+
+.navbar-right {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.nav-notification {
+  font-size: 22px;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+.avatar-wrapper {
+  position: relative;
+}
+
+.nav-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background-color: #005a2b;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.dropdown-menu {
+  position: absolute;
+  top: 50px;
+  right: 0;
+  background-color: #ffffff;
+  min-width: 150px;
+  border-radius: 8px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+  border: 1px solid #eeeeee;
+  display: flex;
+  flex-direction: column;
+  padding: 5px 0;
+  z-index: 100;
+}
+
+.dropdown-item {
+  background: none;
+  border: none;
+  padding: 10px 15px;
+  text-align: left;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.dropdown-item.logout {
+  color: #cc0000;
+  border-top: 1px solid #eeeeee;
+}
+
+.lms-content {
+  padding: 40px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+/* --- PHẦN KHÓA HỌC XANH LÁ & ĐƠN GIẢN --- */
+
+.courses-page-title {
+  color: #005a2b;
+  font-size: 24px;
+  font-weight: bold;
+  text-transform: uppercase;
+  margin-bottom: 20px;
+}
+
+/* Khung tổng đổi sang viền xanh lá */
+.courses-main-box {
+  background-color: #ffffff;
+  border: 2px solid #008b44;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+/* Banner trên đầu đổi sang màu xanh lá, chữ trắng */
+.courses-banner-header {
+  background-color: #008b44;
+  padding: 15px 20px;
+  font-weight: bold;
+  color: #ffffff;
+  font-size: 16px;
+}
+
+.courses-controls-row {
+  padding: 15px 20px;
+}
+
+.search-box-input {
+  width: 200px;
+  padding: 8px 12px;
+  border: 1px solid #cccccc;
+  border-radius: 6px;
+  font-size: 14px;
+}
+
+/* Tiêu đề học kỳ đổi sang màu xanh lá đậm */
+.semester-section-title {
+  color: #005a2b;
+  font-size: 16px;
+  font-weight: bold;
+  padding: 10px 20px;
+  border-top: 1px solid #eeeeee;
+  margin: 0;
+}
+
+.course-row-item {
+  display: flex;
+  align-items: center;
+  padding: 15px 20px;
+  border-top: 1px solid #eeeeee;
+  gap: 20px;
+}
+
+/* Khối hình chữ nhật bên trái - Màu nền sẽ do React cấp động */
+.course-thumbnail-placeholder {
+  width: 120px;
+  height: 70px;
+  border-radius: 6px;
+  cursor: pointer;
+  border: 1px solid rgba(0,0,0,0.1);
+}
+
+.course-thumbnail-placeholder:hover {
+  opacity: 0.85; 
+}
+
+.course-info-block {
+  flex: 1;
+}
+
+.course-link-title {
+  color: #0056b3;
+  font-size: 15px;
+  font-weight: bold;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.course-link-title:hover {
+  text-decoration: underline;
+}
+
+.course-faculty-text {
+  color: #666666;
+  font-size: 13px;
+  margin: 5px 0 0 0;
+}
+
+/* --- ĐOẠN CSS CHO NÚT PHÂN TRANG CƠ BẢN --- */
+.pagination-row {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 15px;
+  padding: 20px;
+  border-top: 1px solid #eeeeee;
+  background-color: #fafafa;
+}
+
+.page-btn {
+  padding: 8px 16px;
+  font-size: 14px;
+  font-weight: bold;
+  border: 1px solid #008b44;
+  background-color: white;
+  color: #008b44;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.page-btn:hover:not(:disabled) {
+  background-color: #008b44;
+  color: white;
+}
+
+.page-btn:disabled {
+  border-color: #cccccc;
+  color: #bbbbbb;
+  cursor: not-allowed;
+}
+
+.page-info {
+  font-size: 14px;
+  color: #333333;
+}

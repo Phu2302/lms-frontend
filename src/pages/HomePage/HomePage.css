@@ -1,0 +1,66 @@
+.mybk-container {
+  min-height: 100vh;
+  background-color: #f0f4f8;
+  padding: 30px;
+  font-family: Arial, sans-serif;
+}
+.mybk-header {
+  display: flex;
+  align-items: center;
+  border-bottom: 2px solid #008b44;
+  padding-bottom: 15px;
+  margin-bottom: 30px;
+}
+.mybk-logo {
+  width: 50px; height: 50px; background-color: #008b44; color: white; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-weight: bold; margin-right: 15px;
+}
+.mybk-title h1 { margin: 0; color: #005a2b; font-size: 24px; }
+
+/* Chia làm 3 cột lớn bằng nhau */
+.mybk-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 25px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+/* Từng khối cột */
+.mybk-column {
+  background-color: white;
+  border-radius: 10px;
+  padding: 20px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+  border-top: 4px solid #008b44;
+}
+
+.mybk-column h2 {
+  color: #005a2b;
+  font-size: 18px;
+  margin-top: 0;
+  margin-bottom: 20px;
+  border-bottom: 1px dashed #ccc;
+  padding-bottom: 8px;
+}
+
+/* Các nút dịch vụ con bên trong cột */
+.service-btn {
+  display: block;
+  width: 100%;
+  padding: 12px 15px;
+  background-color: #f8f9fa;
+  color: #333;
+  border: 1px solid #e9ecef;
+  border-radius: 6px;
+  text-align: left;
+  font-weight: bold;
+  cursor: pointer;
+  margin-bottom: 12px;
+  transition: all 0.2s;
+}
+
+.service-btn:hover {
+  background-color: #e8f5e9;
+  color: #008b44;
+  border-color: #008b44;
+}

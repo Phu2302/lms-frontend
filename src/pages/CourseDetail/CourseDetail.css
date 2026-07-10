@@ -1,0 +1,153 @@
+.course-detail-container {
+  min-height: 100vh;
+  background-color: #f5f7fa;
+  font-family: Arial, sans-serif;
+}
+
+/* Phần nội dung chính nằm dưới Navbar */
+.course-detail-body {
+  padding: 30px;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+/* Tên môn học lớn phía trên */
+.course-detail-title {
+  color: #005a2b; /* Đổi sang màu xanh lá đậm */
+  font-size: 24px;
+  font-weight: bold;
+  line-height: 1.4;
+  margin-bottom: 25px;
+}
+
+/* Thanh chứa các nút Tab (Khóa học / Điểm) */
+.tabs-bar {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.tab-button {
+  padding: 10px 24px;
+  font-size: 15px;
+  font-weight: bold;
+  border-radius: 8px 8px 0 0; /* Bo góc phía trên */
+  border: 1px solid #cccccc;
+  border-bottom: none;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+/* Tab đang được chọn (Màu xanh lá chủ đạo) */
+.tab-button.active {
+  background-color: #008b44;
+  color: #ffffff;
+  border-color: #008b44;
+}
+
+/* Tab không được chọn */
+.tab-button.inactive {
+  background-color: #e0e0e0;
+  color: #555555;
+}
+.tab-button.inactive:hover {
+  background-color: #d5d5d5;
+}
+
+/* --- HỆ THỐNG ACCORDION (CHƯƠNG HỌC) --- */
+.accordion-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 15px; /* Khoảng cách giữa các bài giảng */
+}
+
+.accordion-item {
+  background-color: #ffffff;
+  border: 1px solid #008b44; /* Viền xanh lá */
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+}
+
+/* Thanh tiêu đề của Accordion bấm vào để đóng/mở */
+.accordion-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  background-color: #ffffff;
+  cursor: pointer;
+  user-select: none;
+  transition: background-color 0.2s;
+}
+.accordion-header:hover {
+  background-color: #f9f9f9;
+}
+
+.accordion-header-left {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+/* Mũi tên chữ V đóng mở */
+.accordion-arrow {
+  font-size: 18px;
+  color: #008b44;
+  transition: transform 0.2s;
+}
+/* Xoay mũi tên khi mở */
+.accordion-arrow.open {
+  transform: rotate(0deg);
+}
+.accordion-arrow.closed {
+  transform: rotate(-90deg);
+}
+
+.accordion-title {
+  color: #008b44;
+  font-size: 18px;
+  font-weight: bold;
+}
+
+/* Vùng chứa nội dung bên trong khi mở Accordion */
+.accordion-content {
+  border-top: 1px solid #eeeeee;
+  background-color: #ffffff;
+}
+
+/* Từng dòng tài liệu/bài tập bên trong */
+.content-row {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  padding: 14px 20px;
+  border-bottom: 1px solid #f0f0f0;
+  text-decoration: none;
+  color: #333333;
+  font-size: 15px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+.content-row:last-child {
+  border-bottom: none; /* Dòng cuối không có gạch dưới */
+}
+.content-row:hover {
+  background-color: #f5fafd;
+  color: #0056b3;
+}
+
+/* Kích thước Icon Emoji */
+.content-icon {
+  font-size: 20px;
+  width: 25px;
+  text-align: center;
+}
+
+/* Nội dung hiển thị khi accordion trống */
+.empty-content-text {
+  padding: 20px;
+  color: #888888;
+  font-style: italic;
+  font-size: 14px;
+}

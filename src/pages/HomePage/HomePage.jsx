@@ -1,0 +1,60 @@
+import React from 'react';
+import { useNavigate } from 'react-router-dom';
+import './HomePage.css';
+
+function HomePage() {
+  const navigate = useNavigate();
+
+  // dịch vụ nào cũng phải bị chặn lại để chọn Role trước!
+  const handleServiceClick = (serviceName) => {
+    navigate('/select-role', { state: { targetService: serviceName } });
+  };
+
+  return (
+    <div className="mybk-container">
+      <div className="mybk-header">
+        <div className="mybk-logo">BHX</div>
+        <div className="mybk-title">
+          <h1>HỆ THỐNG TIỆN ÍCH TRỰC TUYẾN (MY-BHX)</h1>
+        </div>
+      </div>
+
+      <div className="mybk-grid">
+        {/* Cột 1: General */}
+        <div className="mybk-column">
+          <h2>General</h2>
+          <button className="service-btn" onClick={() => handleServiceClick('LMS')}>
+            🌐 LMS (Hệ thống học tập)
+          </button>
+          <button className="service-btn" onClick={() => handleServiceClick('Thông tin sinh viên')}>
+            📖 Thông tin sinh viên
+          </button>
+        </div>
+
+        {/* Cột 2: Giảng viên */}
+        <div className="mybk-column">
+          <h2>Giảng viên</h2>
+          <button className="service-btn" onClick={() => handleServiceClick('Quản lý giảng dạy')}>
+            🛠️ Quản lý giảng dạy
+          </button>
+          <button className="service-btn" onClick={() => handleServiceClick('Nhập điểm trực tuyến')}>
+            📝 Nhập điểm trực tuyến
+          </button>
+        </div>
+
+        {/* Cột 3: Dịch vụ sinh viên */}
+        <div className="mybk-column">
+          <h2>Dịch vụ sinh viên</h2>
+          <button className="service-btn" onClick={() => handleServiceClick('Đăng ký môn học')}>
+            ✏️ Đăng ký môn học
+          </button>
+          <button className="service-btn" onClick={() => handleServiceClick('Đăng ký in giấy xác nhận sinh viên')}>
+            🖨️ Đăng ký in giấy xác nhận
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default HomePage;

@@ -1,0 +1,32 @@
+.login-container {
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-family: Arial, sans-serif;
+  transition: background 0.3s;
+}
+/* Màu nền thay đổi tùy thuộc vào class của role */
+.login-container.theme-admin { background-color: #fce8e6; }
+.login-container.theme-user { background: linear-gradient(to bottom, #e3f2fd, #ffffff); }
+
+.login-box {
+  background-color: white; width: 380px; padding: 35px; border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.1); border-top: 5px solid #008b44;
+}
+/* Nếu là admin thì viền trên đổi sang màu đỏ */
+.theme-admin .login-box { border-top: 5px solid #cc0000; }
+
+.login-box h3 { text-align: center; margin-bottom: 25px; font-size: 20px; }
+.theme-admin h3 { color: #cc0000; }
+.theme-user h3 { color: #005a2b; }
+
+.input-grp { margin-bottom: 18px; }
+.input-grp label { display: block; margin-bottom: 6px; font-size: 14px; font-weight: bold; }
+.input-grp input { width: 100%; padding: 11px; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; }
+
+.submit-btn { width: 100%; padding: 12px; color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; }
+.theme-user .submit-btn { background-color: #008b44; }
+.theme-user .submit-btn:hover { background-color: #007236; }
+.theme-admin .submit-btn { background-color: #cc0000; }
+.theme-admin .submit-btn:hover { background-color: #990000; }

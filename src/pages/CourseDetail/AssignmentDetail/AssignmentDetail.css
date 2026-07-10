@@ -1,0 +1,138 @@
+.assignment-container {
+  min-height: 100vh;
+  background-color: #f5f7fa;
+  font-family: Arial, sans-serif;
+}
+
+.assignment-body {
+  padding: 30px;
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+/* Tên môn học nhỏ phía trên cùng */
+.assignment-course-title {
+  color: #000099;
+  font-size: 15px;
+  font-weight: bold;
+  margin-bottom: 10px;
+}
+
+/* Tiêu đề bài tập lớn kèm icon nộp bài */
+.assignment-main-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: #0056b3;
+  font-size: 20px;
+  font-weight: bold;
+  margin-bottom: 25px;
+}
+
+.assignment-title-icon {
+  font-size: 24px;
+}
+
+/* Hộp thông tin thời gian và yêu cầu file */
+.info-box {
+  background-color: #f8f9fa;
+  border: 1px solid #b0bec5;
+  border-radius: 6px;
+  padding: 20px;
+  margin-bottom: 25px;
+  font-size: 15px;
+  line-height: 1.6;
+}
+
+.info-line {
+  margin-bottom: 10px;
+}
+
+.info-line strong {
+  color: #333333;
+}
+
+/* Danh sách yêu cầu định dạng file nộp */
+.req-list {
+  margin: 15px 0 0 0;
+  padding-left: 20px;
+  color: #555555;
+}
+
+.req-list li {
+  margin-bottom: 5px;
+}
+
+/* Nút Nộp Bài (Đổi sang tông màu xanh lá) */
+.submit-assignment-btn {
+  padding: 12px 30px;
+  background-color: #008b44;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+  transition: background-color 0.2s;
+  margin-bottom: 30px;
+}
+
+.submit-assignment-btn:hover {
+  background-color: #007236;
+}
+
+/* BẢNG TRẠNG THÁI NỘP BÀI */
+.status-table-title {
+  color: #0056b3;
+  font-size: 18px;
+  font-weight: bold;
+  margin-bottom: 15px;
+}
+
+.status-table {
+  width: 100%;
+  border-collapse: collapse;
+  border: 1px solid #b0bec5;
+  border-radius: 6px;
+  overflow: hidden;
+  background-color: #ffffff;
+}
+
+/* Từng hàng trong bảng */
+.status-table tr {
+  border-bottom: 1px solid #b0bec5;
+}
+
+.status-table tr:last-child {
+  border-bottom: none;
+}
+
+/* Cột bên trái (Tiêu đề trạng thái) */
+.status-table td.label-cell {
+  width: 25%;
+  background-color: #f1f3f4;
+  font-weight: bold;
+  color: #333333;
+  padding: 15px 20px;
+  font-size: 15px;
+}
+
+/* Cột bên phải (Nội dung trạng thái) */
+.status-table td.value-cell {
+  padding: 15px 20px;
+  color: #333333;
+  font-size: 15px;
+}
+
+/* Màu chữ đỏ cảnh báo khi bài tập đã quá hạn */
+.text-overdue {
+  color: #cc0000;
+  font-weight: bold;
+}
+
+/* Màu chữ xanh khi bài tập còn hạn */
+.text-remaining {
+  color: #008b44;
+  font-weight: bold;
+}
