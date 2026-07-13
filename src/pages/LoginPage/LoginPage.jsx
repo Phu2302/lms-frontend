@@ -51,7 +51,11 @@ function LoginPage() {
     alert(`Đăng nhập thành công với vai trò ${role.toUpperCase()}!`);
     
     if (targetService === 'Thông tin sinh viên') {
-      navigate('/student-info'); // Nhảy vào trang thông tin cá nhân 5 cột màu xanh lá
+      navigate('/student-info'); 
+    } else if (targetService === 'Đăng ký in giấy xác nhận sinh viên') {
+      navigate('/student-info', { state: { defaultTab: 'service' } });
+    } else if (targetService === 'Đăng ký môn học') {
+      navigate('/course-registration');
     } else {
       navigate('/lms'); // Nhảy vào hệ thống học tập LMS
     }

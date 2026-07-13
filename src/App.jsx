@@ -5,11 +5,12 @@ import HomePage from './pages/HomePage/HomePage';
 import RolePage from './pages/RolePage/RolePage';
 import LoginPage from './pages/LoginPage/LoginPage';
 import LMS from './pages/LMS/LMS';
-import CourseDetail from './pages/CourseDetail/CourseDetail';
+import CourseDetail from './pages/LMS/CourseDetail/CourseDetail';
 
-import QuizPage from './pages/CourseDetail/QuizPage/QuizPage';
-import AssignmentDetail from './pages/CourseDetail/AssignmentDetail/AssignmentDetail'; 
+import QuizPage from './pages/LMS/CourseDetail/QuizPage/QuizPage';
+import AssignmentDetail from './pages/LMS/CourseDetail/AssignmentDetail/AssignmentDetail'; 
 import StudentInfo from './pages/StudentInfo/StudentInfo';
+import CourseRegistration from './pages/CourseRegistration/CourseRegistration';
 
 function App() {
   return (
@@ -25,6 +26,7 @@ function App() {
         <Route path="/lms/assignment/:assignmentId" element={<AssignmentDetail />} /> 
         <Route path="/lms/quiz/:quizId" element={<QuizPage />} />
         <Route path="/student-info" element={<StudentInfo />} />
+        <Route path="/course-registration" element={<CourseRegistration />} />
       </Routes>
     </BrowserRouter>
   );

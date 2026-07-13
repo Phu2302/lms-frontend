@@ -1,0 +1,81 @@
+.timetable-container {
+  font-family: Arial, sans-serif;
+  color: #333;
+}
+
+.timetable-title {
+  text-align: center;
+  color: #008b44;
+  margin-bottom: 5px;
+  font-size: 22px;
+}
+
+.timetable-student-info {
+  text-align: center;
+  margin-bottom: 20px;
+  font-size: 15px;
+}
+
+.timetable-note {
+  background-color: #f8f9fa;
+  border-left: 4px solid #008b44;
+  padding: 15px;
+  margin-bottom: 20px;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.timetable-controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+}
+
+.semester-select {
+  padding: 8px 12px;
+  font-size: 14px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  min-width: 250px;
+}
+
+.search-box {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+}
+
+.search-input {
+  padding: 6px 10px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+.table-responsive {
+  overflow-x: auto;
+}
+
+.tuan-hoc {
+  font-family: monospace;
+  letter-spacing: 1px;
+}
+
+.empty-message {
+  text-align: center;
+  padding: 30px;
+  color: #666;
+  font-style: italic;
+}
+
+.timetable-footer {
+  margin-top: 20px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.total-credits {
+  font-size: 16px;
+  color: #005a2b;
+}
