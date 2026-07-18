@@ -5,9 +5,28 @@ import './HomePage.css';
 function HomePage() {
   const navigate = useNavigate();
 
-  // dịch vụ nào cũng phải bị chặn lại để chọn Role trước!
+  // dịch vụ nào cũng phải bị chặn lại để chọn Role trước nếu chưa đăng nhập!
   const handleServiceClick = (serviceName) => {
-    navigate('/select-role', { state: { targetService: serviceName } });
+    const token = localStorage.getItem('token');
+    if (token) {
+      if (serviceName === 'Thông tin sinh viên') {
+        navigate('/student-info');
+        return;
+      }
+      if (serviceName === 'Đăng ký in giấy xác nhận') {
+        navigate('/student-info', { state: { defaultTab: 'service' } });
+        return;
+      }
+      if (serviceName === 'Đăng ký môn học') {
+        navigate('/course-registration');
+        return;
+      }
+      if (serviceName === 'LMS') {
+        navigate('/lms');
+        return;
+      }
+    }
+    navigate('/login', { state: { targetService: serviceName } });
   };
 
   return (
@@ -48,7 +67,7 @@ function HomePage() {
           <button className="service-btn" onClick={() => handleServiceClick('Đăng ký môn học')}>
             ✏️ Đăng ký môn học
           </button>
-          <button className="service-btn" onClick={() => handleServiceClick('Đăng ký in giấy xác nhận sinh viên')}>
+          <button className="service-btn" onClick={() => handleServiceClick('Đăng ký in giấy xác nhận')}>
             🖨️ Đăng ký in giấy xác nhận
           </button>
         </div>

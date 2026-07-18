@@ -1,0 +1,355 @@
+.post-detail-container {
+  min-height: 100vh;
+  background-color: #f5f7fa;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.post-detail-body {
+  padding: 30px;
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.main-post-card {
+  background: #ffffff;
+  border-radius: 8px;
+  padding: 25px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  margin-bottom: 25px;
+  border: 1px solid #e2e8f0;
+}
+
+.main-post-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #eee;
+  padding-bottom: 15px;
+  margin-bottom: 20px;
+}
+
+.post-author-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.user-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background-color: #008b44;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  font-size: 18px;
+}
+
+.reply-avatar {
+  width: 32px;
+  height: 32px;
+  font-size: 15px;
+  background-color: #319795;
+}
+
+.author-name {
+  font-weight: bold;
+  color: #2d3748;
+  font-size: 15px;
+}
+
+.user-badge {
+  font-size: 11px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  margin-left: 8px;
+  font-weight: bold;
+}
+
+.admin-badge {
+  background-color: #feebc8;
+  color: #c05621;
+}
+
+.instructor-badge {
+  background-color: #c6f6d5;
+  color: #22543d;
+}
+
+.post-timestamp {
+  color: #a0aec0;
+  font-size: 12px;
+  margin-left: 10px;
+}
+
+.delete-post-header-btn {
+  background: #fff;
+  border: 1px solid #fed7d7;
+  color: #e53e3e;
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 500;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.delete-post-header-btn:hover {
+  background: #fff5f5;
+  border-color: #feb2b2;
+}
+
+.post-detail-title {
+  margin: 0 0 15px 0;
+  font-size: 20px;
+  color: #1a202c;
+  line-height: 1.4;
+}
+
+.post-detail-body-text {
+  color: #4a5568;
+  font-size: 15px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  margin: 0;
+}
+
+.replies-section {
+  margin-bottom: 25px;
+}
+
+.replies-section h3 {
+  color: #2d3748;
+  font-size: 17px;
+  border-bottom: 2px solid #e2e8f0;
+  padding-bottom: 8px;
+  margin-bottom: 15px;
+}
+
+.no-replies-card {
+  background: #fff;
+  padding: 30px;
+  border-radius: 8px;
+  text-align: center;
+  color: #718096;
+  font-style: italic;
+  border: 1px solid #e2e8f0;
+}
+
+.replies-list {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.reply-card {
+  background: #ffffff;
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
+  border: 1px solid #e2e8f0;
+}
+
+.reply-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  border-bottom: 1px solid #f7fafc;
+  padding-bottom: 8px;
+}
+
+.reply-author-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.reply-content p {
+  color: #4a5568;
+  font-size: 14px;
+  line-height: 1.5;
+  margin: 0;
+  white-space: pre-wrap;
+}
+
+.delete-reply-btn {
+  background: transparent;
+  border: none;
+  color: #a0aec0;
+  cursor: pointer;
+  font-size: 16px;
+  padding: 4px 8px;
+  border-radius: 4px;
+  transition: all 0.2s;
+}
+.delete-reply-btn:hover {
+  color: #e53e3e;
+  background: #fff5f5;
+}
+
+.reply-form-card {
+  background: #ffffff;
+  padding: 25px;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  border: 1px solid #e2e8f0;
+}
+
+.reply-form-card h4 {
+  margin: 0 0 15px 0;
+  color: #2d3748;
+  font-size: 15px;
+  border-bottom: 1px solid #eee;
+  padding-bottom: 8px;
+}
+
+.reply-form-card textarea {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 14px;
+  font-family: inherit;
+  box-sizing: border-box;
+  resize: vertical;
+}
+.reply-form-card textarea:focus {
+  border-color: #008b44;
+  outline: none;
+}
+
+.submit-reply-btn {
+  background-color: #008b44;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  font-weight: 600;
+  border-radius: 6px;
+  cursor: pointer;
+  margin-top: 10px;
+  transition: background-color 0.2s;
+}
+.submit-reply-btn:hover {
+  background-color: #007237;
+}
+.submit-reply-btn:disabled {
+  background-color: #a3d9b8;
+  cursor: not-allowed;
+}
+
+/* Modal overlay and card styling for delete confirmation */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000; /* Ensure overlay floats above sticky header (1000) */
+  animation: fadeIn 0.2s ease-out;
+}
+
+.modal-content {
+  background: #ffffff;
+  border-radius: 8px;
+  width: 90%;
+  max-width: 450px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+  border: 1px solid #e2e8f0;
+  overflow: hidden;
+  animation: slideUp 0.2s ease-out;
+}
+
+.modal-header.delete-header {
+  background-color: #e53e3e;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  color: #ffffff;
+}
+
+.modal-header.delete-header h3 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: bold;
+}
+
+.modal-header.delete-header .close-btn {
+  background: transparent;
+  border: none;
+  color: #ffffff;
+  font-size: 18px;
+  cursor: pointer;
+  opacity: 0.8;
+  transition: opacity 0.2s;
+}
+.modal-header.delete-header .close-btn:hover {
+  opacity: 1;
+}
+
+.modal-body {
+  padding: 24px 20px;
+}
+
+.modal-body p {
+  margin: 0;
+  color: #4a5568;
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  padding: 14px 20px;
+  background-color: #f7fafc;
+  border-top: 1px solid #edf2f7;
+}
+
+.confirm-delete-btn {
+  background-color: #e53e3e;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  font-weight: bold;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background-color 0.2s;
+}
+.confirm-delete-btn:hover {
+  background-color: #c53030;
+}
+
+.dismiss-btn {
+  background-color: #ffffff;
+  color: #4a5568;
+  border: 1px solid #cbd5e0;
+  padding: 8px 16px;
+  font-weight: bold;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background-color 0.2s;
+}
+.dismiss-btn:hover {
+  background-color: #edf2f7;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { transform: translateY(20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+

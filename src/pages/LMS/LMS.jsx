@@ -1,10 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { getUserClassesAPI } from '../../api/StudentInfo/Profile/users';
+import Header from '../../components/Header/Header';
 import './LMS.css';
 
 function LMS({ view }) { // Nhận biến view từ App.jsx gửi sang
   const navigate = useNavigate();
-  const [showDropdown, setShowDropdown] = useState(false);
+
 
   // Phân trang (Tối đa 10 môn trên 1 trang - bấm chuyển trang không đổi URL)
   const [currentPage, setCurrentPage] = useState(1);
@@ -13,21 +15,41 @@ function LMS({ view }) { // Nhận biến view từ App.jsx gửi sang
   // Mảng màu sắc cho khối hình chữ nhật
   const bgColors = ['#ff9f43', '#0abde3', '#10ac84', '#ee5253', '#5f27cd', '#ff6b6b', '#48dbfb', '#1dd1a1', '#00d2d3', '#54a0ff'];
 
-  // Mock dữ liệu 12 môn học
-  const [coursesData] = useState([
-    { id: 'CO3005', title: 'Principles of Programming Languages (CO3005)_NGUYỄN HỨA PHÙNG (CLC_HK252) [CC04,CC05]', faculty: 'Khoa Học Máy Tính' },
-    { id: 'MT2013', title: 'Probability and Statistics (MT2013)_NGUYỄN TIẾN DŨNG (CLC_HK242) [CC02,CC10,CC12]', faculty: 'Toán ứng Dụng' },
-    { id: 'CO2007', title: 'Computer Architecture (CO2007)_PHẠM QUỐC CƯỜNG (CLC_HK241) [CC01,CC02,CC03,CC04,CC05]', faculty: 'Khoa Học Máy Tính' },
-    { id: 'CO1001', title: 'Nhập môn Điện toán (CO1001)_TRẦN MINH TRIẾT (CLC_HK252)', faculty: 'Khoa Học Máy Tính' },
-    { id: 'CO2011', title: 'Mạng máy tính (CO2011)_LÊ VĂN TRUNG (CLC_HK252)', faculty: 'Kỹ Thuật Máy Tính' },
-    { id: 'CO2013', title: 'Hệ điều hành (CO2013)_NGUYỄN BẢO TRUNG (CLC_HK252)', faculty: 'Khoa Học Máy Tính' },
-    { id: 'CO3001', title: 'Cơ sở dữ liệu (CO3001)_PHẠM NGUYỄN CƯƠNG (CLC_HK252)', faculty: 'Hệ thống thông tin' },
-    { id: 'CO3003', title: 'Kỹ thuật phần mềm (CO3003)_TRẦN NGỌC BẢO (CLC_HK252)', faculty: 'Công nghệ phần mềm' },
-    { id: 'CO3007', title: 'Trí tuệ nhân tạo (CO3007)_VŨ HẢI QUÂN (CLC_HK252)', faculty: 'Khoa Học Máy Tính' },
-    { id: 'CO3009', title: 'An ninh mạng (CO3009)_ĐẶNG TRẦN KHÁNH (CLC_HK252)', faculty: 'Kỹ Thuật Máy Tính' },
-    { id: 'MT1001', title: 'Giải tích 1 (MT1001)_LÊ THỊ THU HÀ (CLC_HK252)', faculty: 'Toán ứng Dụng' },
-    { id: 'MT1003', title: 'Đại số tuyến tính (MT1003)_NGUYỄN ĐÌNH HUY (CLC_HK252)', faculty: 'Toán ứng Dụng' }
-  ]);
+  // State cho dữ liệu từ API
+  const [coursesData, setCoursesData] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  // Lấy thông tin user từ localStorage
+  const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
+
+
+  // Gọi API lấy danh sách classes khi vào tab Courses
+  useEffect(() => {
+    if (view === 'courses') {
+      fetchCourses();
+    }
+  }, [view]);
+
+  const fetchCourses = async () => {
+    setLoading(true);
+    setError('');
+    try {
+      const res = await getUserClassesAPI();
+      // Map dữ liệu từ API sang format hiển thị
+      const classes = Array.isArray(res.data) ? res.data : [];
+      setCoursesData(classes.map(cls => ({
+        id: cls.class_id || cls.id,
+        title: cls.class_name || cls.course_name || `Lớp ${cls.class_id || cls.id}`,
+        faculty: cls.faculty_name || cls.department || ''
+      })));
+    } catch (err) {
+      console.error('Lỗi tải danh sách lớp học:', err);
+      setError('Không thể tải danh sách lớp học. Vui lòng thử lại.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Chia mảng dữ liệu theo trang
   const indexOfLastItem = currentPage * itemsPerPage;
@@ -40,51 +62,22 @@ function LMS({ view }) { // Nhận biến view từ App.jsx gửi sang
     navigate(`/lms/course/${courseId}`);
   };
 
+
+
   return (
     <div className="lms-container">
       
       {/* NAVBAR PHÍA TRÊN */}
-      <nav className="lms-navbar">
-        <div className="navbar-left">
-          <div className="nav-logo">BHX</div>
-          
-          {/* Bấm vào chữ Trang chủ thì đổi URL về /lms */}
-          <button 
-            className={`nav-item ${view === 'home' ? 'active' : ''}`} 
-            onClick={() => navigate('/lms')}
-          >
-            Trang chủ
-          </button>
-          
-          {/* Bấm vào chữ Khóa học thì đổi URL về /lms/course */}
-          <button 
-            className={`nav-item ${view === 'courses' ? 'active' : ''}`} 
-            onClick={() => { navigate('/lms/course'); setCurrentPage(1); }}
-          >
-            Các khóa học của tôi
-          </button>
-        </div>
-
-        <div className="navbar-right">
-          <button className="nav-notification" onClick={() => alert('Không có thông báo.')}>🔔</button>
-          <div className="avatar-wrapper">
-            <div className="nav-avatar" onClick={() => setShowDropdown(!showDropdown)}>SV</div>
-            {showDropdown && (
-              <div className="dropdown-menu">
-                <button className="dropdown-item">👤 Profile</button>
-                <button className="dropdown-item logout" onClick={() => navigate('/')}>🚪 Log out</button>
-              </div>
-            )}
-          </div>
-        </div>
-      </nav>
+      <Header view={view} />
 
       {/* KHU VỰC NỘI DUNG CHÍNH */}
       <div className="lms-content">
         {view === 'home' ? (
           <div>
             <h2>Trang Chủ LMS</h2>
-            <p style={{ marginTop: '10px', color: '#666' }}>Chào mừng bạn quay lại hệ thống học tập trực tuyến!</p>
+            <p style={{ marginTop: '10px', color: '#666' }}>
+              Chào mừng {currentUser.user_name || 'bạn'} quay lại hệ thống học tập trực tuyến!
+            </p>
           </div>
         ) : (
           
@@ -101,7 +94,33 @@ function LMS({ view }) { // Nhận biến view từ App.jsx gửi sang
 
               <h2 className="semester-section-title">• Học kỳ (Semester) 2/2025-2026</h2>
 
-              {currentCourses.map((course, index) => {
+              {/* Loading state */}
+              {loading && (
+                <div style={{ textAlign: 'center', padding: '40px', color: '#666' }}>
+                  ⏳ Đang tải danh sách lớp học...
+                </div>
+              )}
+
+              {/* Error state */}
+              {error && (
+                <div style={{ textAlign: 'center', padding: '20px', color: '#c00', background: '#fee', borderRadius: '8px', margin: '10px 0' }}>
+                  {error}
+                  <br />
+                  <button onClick={fetchCourses} style={{ marginTop: '10px', padding: '6px 16px', cursor: 'pointer', border: '1px solid #ccc', borderRadius: '4px' }}>
+                    Thử lại
+                  </button>
+                </div>
+              )}
+
+              {/* Empty state */}
+              {!loading && !error && coursesData.length === 0 && (
+                <div style={{ textAlign: 'center', padding: '40px', color: '#999' }}>
+                  📭 Bạn chưa được đăng ký vào lớp học nào.
+                </div>
+              )}
+
+              {/* Danh sách courses */}
+              {!loading && !error && currentCourses.map((course, index) => {
                 const globalIndex = indexOfFirstItem + index;
                 const assignedColor = bgColors[globalIndex % bgColors.length];
 

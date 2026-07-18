@@ -1,5 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { getSemestersAPI } from '../../api/LMS/Schedule/semesters';
+import { getUserClassesAPI } from '../../api/StudentInfo/Profile/users';
+import { getAllClassesAPI, enrollClassAPI, unenrollClassAPI } from '../../api/CourseRegistration/classes';
+import { getAllCoursesAPI } from '../../api/CourseRegistration/courses';
 import './CourseRegistration.css';
 
 function CourseRegistration() {
@@ -8,34 +12,174 @@ function CourseRegistration() {
   // State quản lý xem đang ở màn hình danh sách đợt hay chi tiết 1 đợt
   const [activePeriod, setActivePeriod] = useState(null);
 
-  // Danh sách các đợt đăng ký môn học
-  const [periods] = useState([
-    { 
-      id: 'HK261_D1', 
-      name: 'Đăng ký các học phần có nhu cầu học HK1/2026-2027 tất cả diện sinh viên - học viên', 
-      startDate: '02/06/2026 10:00', 
-      endDate: '16/06/2026 15:00' 
-    }
-  ]);
+  // Danh sách các đợt đăng ký môn học (tải từ học kỳ)
+  const [periods, setPeriods] = useState([]);
+  const [registeredCourses, setRegisteredCourses] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState('');
 
-  // Phiếu đăng ký (các môn đã đăng ký)
-  const [registeredCourses] = useState([
-    { maMH: 'CO3005', tenMH: 'Nguyên lý Ngôn ngữ Lập trình', nhom: 'CC04', tinChi: 4 },
-    { maMH: 'IM1019', tenMH: 'Tiếp thị Căn bản', nhom: 'CC03', tinChi: 3 },
-    { maMH: 'SP1039', tenMH: 'Lịch sử Đảng Cộng sản Việt Nam', nhom: 'CC05', tinChi: 2 }
-  ]);
+  // States phục vụ việc tìm kiếm lớp môn học để đăng ký
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [searchMessage, setSearchMessage] = useState('Nhập mã hoặc tên môn học để tìm kiếm lớp đăng ký.');
+
+  const formatDateTime = (dateStr) => {
+    if (!dateStr) return '';
+    try {
+      const d = new Date(dateStr);
+      if (isNaN(d.getTime())) return dateStr;
+      const pad = (num) => String(num).padStart(2, '0');
+      return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+    } catch (e) {
+      return dateStr;
+    }
+  };
+
+  // Tải dữ liệu ban đầu (các học kỳ làm đợt đăng ký và các môn học đã đăng ký)
+  useEffect(() => {
+    fetchInitialData();
+  }, []);
+
+  const fetchInitialData = async () => {
+    setIsLoading(true);
+    setError('');
+    try {
+      const [semestersRes, registeredRes] = await Promise.all([
+        getSemestersAPI(),
+        getUserClassesAPI()
+      ]);
+
+      // Ánh xạ các học kỳ từ DB thành các đợt đăng ký học phần
+      const mappedPeriods = (semestersRes.data || []).map(sem => ({
+        id: String(sem.semester_id),
+        name: `Đăng ký học phần - ${sem.semester_name}`,
+        startDate: sem.reg_start_date ? formatDateTime(sem.reg_start_date) : '--',
+        endDate: sem.reg_end_date ? formatDateTime(sem.reg_end_date) : '--'
+      }));
+
+      setPeriods(mappedPeriods);
+      setRegisteredCourses(registeredRes.data || []);
+    } catch (err) {
+      console.error('Error fetching registration initial data:', err);
+      setError('Không thể tải thông tin đợt đăng ký môn học.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Tải lại danh sách môn học đã đăng ký sau khi thêm/xóa thành công
+  const reloadRegisteredCourses = async () => {
+    try {
+      const res = await getUserClassesAPI();
+      setRegisteredCourses(res.data || []);
+    } catch (err) {
+      console.error('Error reloading registered courses:', err);
+    }
+  };
+
+  // Thực hiện tìm kiếm lớp môn học mở đăng ký
+  const handleSearch = async () => {
+    const query = searchQuery.trim().toLowerCase();
+    if (!query) {
+      setSearchResults([]);
+      setSearchMessage('Vui lòng nhập từ khóa tìm kiếm (Mã hoặc Tên môn học).');
+      return;
+    }
+
+    setIsSearching(true);
+    setSearchMessage('Đang tìm kiếm lớp môn học...');
+    try {
+      // Gọi API lấy toàn bộ các lớp học mở và các môn học để map thông tin
+      const [classesRes, coursesRes] = await Promise.all([
+        getAllClassesAPI(),
+        getAllCoursesAPI()
+      ]);
+
+      const classes = classesRes.data || [];
+      const courses = coursesRes.data || [];
+
+      // Lọc các lớp thuộc học kỳ hiện tại đang chọn đăng ký
+      const currentSemesterClasses = classes.filter(cls => String(cls.semester_id) === String(activePeriod.id));
+
+      // Map thông tin Course vào Class
+      const mappedClasses = currentSemesterClasses.map(cls => {
+        const course = courses.find(co => co.course_id === cls.course_id);
+        return {
+          ...cls,
+          course_code: course ? course.course_code : 'N/A',
+          course_name: course ? course.course_name : 'N/A',
+          credit: course ? course.credit : 0
+        };
+      });
+
+      // Lọc kết quả tìm kiếm theo mã môn hoặc tên môn học
+      const filtered = mappedClasses.filter(item => 
+        item.course_code.toLowerCase().includes(query) ||
+        item.course_name.toLowerCase().includes(query) ||
+        item.class_code.toLowerCase().includes(query)
+      );
+
+      setSearchResults(filtered);
+      if (filtered.length === 0) {
+        setSearchMessage('Không tìm thấy lớp môn học nào phù hợp.');
+      } else {
+        setSearchMessage('');
+      }
+    } catch (err) {
+      console.error('Error searching classes:', err);
+      setSearchMessage('Lỗi tìm kiếm lớp học. API /classes hoặc /courses chưa có sẵn.');
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  // Đăng ký một lớp học
+  const handleEnroll = async (classId) => {
+    try {
+      await enrollClassAPI(classId);
+      alert('Đăng ký lớp học thành công!');
+      await reloadRegisteredCourses();
+    } catch (err) {
+      console.error('Enroll error:', err);
+      alert(err.response?.data?.error || 'Đăng ký thất bại. Lớp học có thể đã đầy hoặc API /classes/enroll chưa được backend cấu hình.');
+    }
+  };
+
+  // Hủy đăng ký một lớp học
+  const handleUnenroll = async (classId) => {
+    if (!window.confirm('Bạn có chắc chắn muốn hủy đăng ký lớp học này?')) return;
+    try {
+      await unenrollClassAPI(classId);
+      alert('Hủy đăng ký lớp học thành công!');
+      await reloadRegisteredCourses();
+    } catch (err) {
+      console.error('Unenroll error:', err);
+      alert(err.response?.data?.error || 'Hủy đăng ký thất bại. Vui lòng thử lại sau.');
+    }
+  };
+
+  // Lọc danh sách môn đã đăng ký hiển thị theo học kỳ đang active
+  const activeRegisteredCourses = registeredCourses.filter(cls => 
+    activePeriod && String(cls.semester_id) === String(activePeriod.id)
+  );
+
+  if (isLoading && periods.length === 0) {
+    return <div className="cr-loading">Đang tải thông tin đợt đăng ký...</div>;
+  }
 
   // Render màn hình Danh sách đợt đăng ký
   if (!activePeriod) {
     return (
       <div className="cr-layout">
         <nav className="cr-top-nav">
-          <div className="nav-brand-box" onClick={() => navigate('/menu')} style={{ cursor: 'pointer' }}>
+          <div className="nav-brand-box" onClick={() => navigate('/')} style={{ cursor: 'pointer' }}>
             myBH
           </div>
           <div className="cr-nav-title">Đăng ký môn học</div>
         </nav>
         <div className="cr-main-content">
+          {error && <div className="cr-error-banner">{error}</div>}
           <div className="cr-card">
             <h2>DANH SÁCH ĐỢT ĐĂNG KÝ MÔN HỌC</h2>
             <table className="cr-table mt-15">
@@ -48,22 +192,28 @@ function CourseRegistration() {
                 </tr>
               </thead>
               <tbody>
-                {periods.map((period, index) => (
-                  <tr key={period.id}>
-                    <td>{index + 5}</td>
-                    <td>
-                      <strong>{period.id}</strong>
-                      <br/>
-                      <span className="cr-text-small">{period.name}</span>
-                    </td>
-                    <td>{period.startDate} - {period.endDate}</td>
-                    <td>
-                      <button className="cr-btn-primary" onClick={() => setActivePeriod(period)}>
-                        Vào đăng ký
-                      </button>
-                    </td>
+                {periods.length > 0 ? (
+                  periods.map((period, index) => (
+                    <tr key={period.id}>
+                      <td>{index + 1}</td>
+                      <td>
+                        <strong>{period.id}</strong>
+                        <br/>
+                        <span className="cr-text-small">{period.name}</span>
+                      </td>
+                      <td>{period.startDate} - {period.endDate}</td>
+                      <td>
+                        <button className="cr-btn-primary" onClick={() => setActivePeriod(period)}>
+                          Vào đăng ký
+                        </button>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan="4" className="empty-message">Hiện tại chưa có đợt đăng ký môn học nào mở.</td>
                   </tr>
-                ))}
+                )}
               </tbody>
             </table>
           </div>
@@ -77,7 +227,12 @@ function CourseRegistration() {
     <div className="cr-layout">
       {/* Header màu xanh của đợt */}
       <div className="cr-period-header">
-        <button className="cr-back-btn" onClick={() => setActivePeriod(null)}>🔙 Trở về</button>
+        <button className="cr-back-btn" onClick={() => {
+          setActivePeriod(null);
+          setSearchResults([]);
+          setSearchQuery('');
+          setSearchMessage('Nhập mã hoặc tên môn học để tìm kiếm lớp đăng ký.');
+        }}>🔙 Trở về</button>
         <span className="cr-period-title">
           ĐĂNG KÝ/ HIỆU CHỈNH ({activePeriod.id}) {activePeriod.name}
         </span>
@@ -114,19 +269,66 @@ function CourseRegistration() {
               <input 
                 type="text" 
                 className="cr-search-input" 
-                placeholder="Mã môn học/Tên môn học (Để trống => toàn bộ lớp môn học - RẤT CHẬM!!!)" 
+                placeholder="Mã môn học/Tên môn học (Ví dụ: CO3015, Giải tích 1,...)" 
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && handleSearch()}
               />
-              <button className="cr-search-btn">🔍</button>
+              <button className="cr-search-btn" onClick={handleSearch}>🔍</button>
             </div>
-            <p className="cr-search-msg">
-              Chưa tìm kiếm / Môn học bạn đang tìm kiếm hiện không được mở cho đăng ký.
-            </p>
+            
+            {searchMessage && <p className="cr-search-msg">{searchMessage}</p>}
+
+            {/* Hiển thị kết quả tìm kiếm lớp học */}
+            {searchResults.length > 0 && (
+              <div className="cr-search-results mt-15">
+                <table className="cr-table cr-table-small">
+                  <thead>
+                    <tr>
+                      <th>Mã lớp</th>
+                      <th>Mã môn</th>
+                      <th>Tên môn học</th>
+                      <th>Số TC</th>
+                      <th>Sĩ số</th>
+                      <th>Hành động</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {searchResults.map(cls => {
+                      const isAlreadyEnrolled = registeredCourses.some(rc => rc.class_id === cls.class_id);
+                      return (
+                        <tr key={cls.class_id}>
+                          <td><strong>{cls.class_code}</strong></td>
+                          <td>{cls.course_code}</td>
+                          <td>{cls.course_name}</td>
+                          <td>{cls.credit}</td>
+                          <td>{cls.current_student} / {cls.max_student}</td>
+                          <td>
+                            {isAlreadyEnrolled ? (
+                              <button className="cr-btn-disabled" disabled>Đã đăng ký</button>
+                            ) : (
+                              <button 
+                                className="cr-btn-primary cr-btn-small" 
+                                onClick={() => handleEnroll(cls.class_id)}
+                                disabled={cls.current_student >= cls.max_student}
+                              >
+                                {cls.current_student >= cls.max_student ? 'Đầy' : 'Đăng ký'}
+                              </button>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
         </div>
 
         {/* Phiếu đăng ký (nằm dưới cùng) */}
         <div className="cr-card mt-20">
-          <h3 className="cr-panel-title">Phiếu đăng ký</h3>
+          <h3 className="cr-panel-title">Phiếu đăng ký (Đã đăng ký thành công học kỳ {activePeriod.id})</h3>
           <table className="cr-table">
             <thead>
               <tr>
@@ -138,21 +340,21 @@ function CourseRegistration() {
               </tr>
             </thead>
             <tbody>
-              {registeredCourses.length > 0 ? (
-                registeredCourses.map((course, idx) => (
-                  <tr key={idx}>
-                    <td>{course.maMH}</td>
-                    <td>{course.tenMH}</td>
-                    <td>{course.nhom}</td>
-                    <td>{course.tinChi}</td>
+              {activeRegisteredCourses.length > 0 ? (
+                activeRegisteredCourses.map((course, idx) => (
+                  <tr key={course.class_id || idx}>
+                    <td>{course.course_code || course.maMH}</td>
+                    <td>{course.course_name || course.tenMH}</td>
+                    <td>{course.class_code || course.nhom}</td>
+                    <td>{course.credit || course.tinChi}</td>
                     <td>
-                      <button className="cr-btn-danger">Xóa</button>
+                      <button className="cr-btn-danger" onClick={() => handleUnenroll(course.class_id)}>Xóa</button>
                     </td>
                   </tr>
                 ))
               ) : (
                 <tr>
-                  <td colSpan="5" className="empty-message">Bạn chưa đăng ký môn học nào.</td>
+                  <td colSpan="5" className="empty-message">Bạn chưa đăng ký môn học nào trong học kỳ này.</td>
                 </tr>
               )}
             </tbody>

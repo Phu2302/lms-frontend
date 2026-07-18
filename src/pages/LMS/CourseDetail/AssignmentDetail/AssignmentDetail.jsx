@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import Header from '../../../../components/Header/Header';
 import './AssignmentDetail.css';
 
 function AssignmentDetail() {
@@ -43,16 +44,7 @@ function AssignmentDetail() {
     <div className="assignment-container">
       
       {/* THANH NAVBAR ĐỒNG BỘ HỆ THỐNG */}
-      <nav className="lms-navbar">
-        <div className="navbar-left">
-          <div className="nav-logo">BHX</div>
-          <button className="nav-item" onClick={() => navigate('/lms')}>Trang chủ</button>
-          <button className="nav-item active" onClick={() => navigate('/lms/course')}>Các khóa học của tôi</button>
-        </div>
-        <div className="navbar-right">
-          <div className="nav-avatar">SV</div>
-        </div>
-      </nav>
+      <Header view="courses" />
 
       {/* THÂN TRANG CHI TIẾT BÀI TẬP */}
       <div className="assignment-body">

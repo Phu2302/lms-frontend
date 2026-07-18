@@ -48,9 +48,48 @@
   overflow-x: auto;
 }
 
+.student-data-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 10px;
+  font-size: 13px;
+}
+
+.student-data-table th,
+.student-data-table td {
+  border: 1px solid #ddd;
+  padding: 10px 8px;
+  text-align: center;
+}
+
+.student-data-table th {
+  background-color: #008b44;
+  color: white;
+  font-weight: bold;
+}
+
+.student-data-table tr:nth-child(even) {
+  background-color: #f9f9f9;
+}
+
+.student-data-table tr:hover {
+  background-color: #f1f1f1;
+}
+
 .empty-message {
   text-align: center;
   padding: 30px;
   color: #666;
   font-style: italic;
+}
+
+.exam-error-message {
+  background-color: #fff3cd;
+  color: #856404;
+  border: 1px solid #ffeeba;
+  padding: 10px 15px;
+  border-radius: 4px;
+  margin-bottom: 15px;
+  font-size: 14px;
+  text-align: center;
 }

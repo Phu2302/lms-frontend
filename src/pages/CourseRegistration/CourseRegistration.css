@@ -85,6 +85,11 @@
   background-color: #006b33;
 }
 
+.cr-btn-small {
+  padding: 5px 8px;
+  font-size: 12px;
+}
+
 .cr-btn-danger {
   background-color: #d32f2f;
   color: white;
@@ -96,6 +101,15 @@
 
 .cr-btn-danger:hover {
   background-color: #b71c1c;
+}
+
+.cr-btn-disabled {
+  background-color: #cbd5e0;
+  color: #718096;
+  border: none;
+  padding: 6px 10px;
+  border-radius: 4px;
+  cursor: not-allowed;
 }
 
 /* Detailed View */
@@ -195,4 +209,35 @@
   margin-top: 15px;
   font-size: 13px;
   color: #333;
+}
+
+.cr-loading {
+  text-align: center;
+  padding: 100px 0;
+  color: #666;
+  font-size: 16px;
+}
+
+.cr-error-banner {
+  background-color: #fff5f5;
+  border: 1px solid #fed7d7;
+  color: #c53030;
+  padding: 12px 20px;
+  border-radius: 6px;
+  margin-bottom: 20px;
+  font-size: 14px;
+}
+
+.empty-message {
+  text-align: center;
+  padding: 30px !important;
+  color: #666;
+  font-style: italic;
+}
+
+.cr-search-results {
+  max-height: 400px;
+  overflow-y: auto;
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
 }

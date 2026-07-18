@@ -12,34 +12,88 @@ lms-frontend
 ├── package.json
 ├── src
 │   ├── App.jsx
+│   ├── api
+│   │   ├── CourseRegistration
+│   │   │   ├── classes.js
+│   │   │   └── courses.js
+│   │   ├── LMS
+│   │   │   ├── CourseDetail
+│   │   │   │   ├── chapters.js
+│   │   │   │   ├── classes.js
+│   │   │   │   ├── forumPosts.js
+│   │   │   │   ├── forums.js
+│   │   │   │   ├── materials.js
+│   │   │   │   ├── quizEntries.js
+│   │   │   │   ├── quizzes.js
+│   │   │   │   └── studentQuestionResponses.js
+│   │   │   └── Schedule
+│   │   │       ├── schedules.js
+│   │   │       └── semesters.js
+│   │   ├── StudentInfo
+│   │   │   ├── ExamSchedule
+│   │   │   │   └── exams.js
+│   │   │   ├── Profile
+│   │   │   │   └── users.js
+│   │   │   ├── Scoreboard
+│   │   │   │   └── grades.js
+│   │   │   └── ServiceStudent
+│   │   │       └── requests.js
+│   │   ├── auth
+│   │   │   └── auth.js
+│   │   └── axios.js
 │   ├── components
+│   │   └── Header
+│   │       └── Header.jsx
 │   ├── index.css
 │   ├── main.jsx
 │   └── pages
-│       ├── CourseDetail
-│       │   ├── AssignmentDetail
-│       │   │   ├── AssignmentDetail.css
-│       │   │   └── AssignmentDetail.jsx
-│       │   ├── CourseDetail.css
-│       │   ├── CourseDetail.jsx
-│       │   └── QuizPage
-│       │       ├── QuizPage.css
-│       │       └── QuizPage.jsx
+│       ├── CourseRegistration
+│       │   ├── CourseRegistration.css
+│       │   └── CourseRegistration.jsx
 │       ├── HomePage
 │       │   ├── HomePage.css
 │       │   └── HomePage.jsx
 │       ├── LMS
+│       │   ├── CourseDetail
+│       │   │   ├── AssignmentDetail
+│       │   │   │   ├── AssignmentDetail.css
+│       │   │   │   └── AssignmentDetail.jsx
+│       │   │   ├── CourseDetail.css
+│       │   │   ├── CourseDetail.jsx
+│       │   │   ├── ForumPage
+│       │   │   │   ├── ForumPage.css
+│       │   │   │   └── ForumPage.jsx
+│       │   │   ├── ForumPostDetailPage
+│       │   │   │   ├── ForumPostDetailPage.css
+│       │   │   │   └── ForumPostDetailPage.jsx
+│       │   │   └── QuizPage
+│       │   │       ├── QuizPage.css
+│       │   │       └── QuizPage.jsx
 │       │   ├── LMS.css
-│       │   └── LMS.jsx
+│       │   ├── LMS.jsx
+│       │   └── Schedule
+│       │       ├── CalendarPage.css
+│       │       ├── CalendarPage.jsx
+│       │       ├── Schedule.css
+│       │       └── Schedule.jsx
 │       ├── LoginPage
 │       │   ├── LoginPage.css
 │       │   └── LoginPage.jsx
-│       ├── RolePage
-│       │   ├── RolePage.css
-│       │   └── RolePage.jsx
 │       └── StudentInfo
+│           ├── ExamSchedule
+│           │   ├── ExamSchedule.css
+│           │   └── ExamSchedule.jsx
+│           ├── Scoreboard
+│           │   ├── Scoreboard.css
+│           │   └── Scoreboard.jsx
+│           ├── ServiceStudent
+│           │   ├── ServiceStudent.css
+│           │   └── ServiceStudent.jsx
 │           ├── StudentInfo.css
-│           └── StudentInfo.jsx
+│           ├── StudentInfo.jsx
+│           └── Timetable
+│               ├── Timetable.css
+│               └── Timetable.jsx
 └── vite.config.js
 ```
 
