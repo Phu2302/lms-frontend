@@ -14,6 +14,11 @@ import ForumPostDetailPage from './pages/LMS/CourseDetail/ForumPostDetailPage/Fo
 import CalendarPage from './pages/LMS/Schedule/CalendarPage';
 import CourseRegistration from './pages/CourseRegistration/CourseRegistration';
 
+import AddQuiz from './pages/LMS/CourseDetail/AddQuiz/AddQuiz';
+import EditQuiz from './pages/LMS/CourseDetail/EditQuiz/EditQuiz';
+import AddMaterial from './pages/LMS/CourseDetail/AddMaterial/AddMaterial';
+import AddForum from './pages/LMS/CourseDetail/AddForum/AddForum';
+
 function App() {
   return (
     <BrowserRouter>
@@ -31,6 +36,12 @@ function App() {
         <Route path="/lms/course/:courseId/forum-post/:postId" element={<ForumPostDetailPage />} />
         <Route path="/lms/calendar" element={<CalendarPage />} />
         <Route path="/course-registration" element={<CourseRegistration />} />
+
+        {/* Dedicated pages for adding/editing Quiz, Material, Forum */}
+        <Route path="/lms/course/:courseId/chapter/:chapterId/add-quiz" element={<AddQuiz />} />
+        <Route path="/lms/course/:courseId/quiz/:quizId/edit" element={<EditQuiz />} />
+        <Route path="/lms/course/:courseId/chapter/:chapterId/add-material" element={<AddMaterial />} />
+        <Route path="/lms/course/:courseId/chapter/:chapterId/add-forum" element={<AddForum />} />
       </Routes>
     </BrowserRouter>
   );

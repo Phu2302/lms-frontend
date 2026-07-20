@@ -11,3 +11,11 @@ export const deleteQuizAPI = (id) => {
 export const getQuizQuestionsAPI = (id) => {
   return api.get(`/quizzes/${id}/questions`);
 };
+
+export const createQuestionAPI = (data) => {
+  return api.post('/questions', data);
+};
+
+export const createQuestionOptionAPI = (data) => {
+  return api.post('/question-options', data);
+};

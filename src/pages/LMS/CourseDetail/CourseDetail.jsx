@@ -4,7 +4,9 @@ import { getClassDetailAPI } from '../../../api/LMS/CourseDetail/classes';
 import { createChapterAPI, deleteChapterAPI } from '../../../api/LMS/CourseDetail/chapters';
 import { createQuizAPI, deleteQuizAPI } from '../../../api/LMS/CourseDetail/quizzes';
 import { createForumAPI, deleteForumAPI } from '../../../api/LMS/CourseDetail/forums';
-import { createMaterialAPI, deleteMaterialAPI } from '../../../api/LMS/CourseDetail/materials';
+import { createMaterialAPI, updateMaterialAPI, deleteMaterialAPI } from '../../../api/LMS/CourseDetail/materials';
+import { getClassAnnouncementsAPI, createAnnouncementAPI, deleteAnnouncementAPI } from '../../../api/teacher/announcements';
+import { getClassGradesAPI, saveBatchGradesAPI, getStudentGradeAPI } from '../../../api/teacher/grades';
 import Header from '../../../components/Header/Header';
 import './CourseDetail.css';
 
@@ -20,6 +22,17 @@ function CourseDetail() {
   const [chapters, setChapters] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+
+  // State Announcements
+  const [announcements, setAnnouncements] = useState([]);
+  const [showAddAnnouncementModal, setShowAddAnnouncementModal] = useState(false);
+  const [newAnnouncementTitle, setNewAnnouncementTitle] = useState('');
+  const [newAnnouncementContent, setNewAnnouncementContent] = useState('');
+
+  // State Grades (Bảng điểm)
+  const [classGrades, setClassGrades] = useState([]);
+  const [studentOwnGrade, setStudentOwnGrade] = useState(null);
+  const [isSavingGrades, setIsSavingGrades] = useState(false);
 
   // State quản lý trạng thái đóng/mở của các Accordion
   const [openSections, setOpenSections] = useState([]);
@@ -57,6 +70,10 @@ function CourseDetail() {
   const [newMaterialType, setNewMaterialType] = useState('DOCUMENT');
   const [newMaterialLink, setNewMaterialLink] = useState('');
 
+  // Edit Material state
+  const [showEditMaterialModal, setShowEditMaterialModal] = useState(false);
+  const [editingMaterial, setEditingMaterial] = useState(null);
+
   // Delete state
   const [itemToDelete, setItemToDelete] = useState(null); // { type: 'chapter'|'quiz'|'forum'|'material', id: number }
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -64,7 +81,14 @@ function CourseDetail() {
   // Gọi API lấy chi tiết class khi component mount
   useEffect(() => {
     fetchClassDetail();
+    fetchAnnouncements();
   }, [courseId]);
+
+  useEffect(() => {
+    if (activeTab === 'diem') {
+      fetchGradesData();
+    }
+  }, [activeTab, courseId, hasEditingPrivileges]);
 
   const fetchClassDetail = async () => {
     setLoading(true);
@@ -109,6 +133,29 @@ function CourseDetail() {
       }
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchAnnouncements = async () => {
+    try {
+      const res = await getClassAnnouncementsAPI(courseId);
+      setAnnouncements(res.data || []);
+    } catch (err) {
+      console.warn('Lỗi tải thông báo lớp:', err);
+    }
+  };
+
+  const fetchGradesData = async () => {
+    try {
+      if (hasEditingPrivileges) {
+        const res = await getClassGradesAPI(courseId);
+        setClassGrades(res.data || []);
+      } else {
+        const res = await getStudentGradeAPI(courseId);
+        setStudentOwnGrade(res.data || null);
+      }
+    } catch (err) {
+      console.warn('Lỗi tải điểm số:', err);
     }
   };
 
@@ -208,6 +255,103 @@ function CourseDetail() {
     }
   };
 
+  const handleOpenEditMaterial = (e, mat) => {
+    e.stopPropagation();
+    setEditingMaterial({
+      material_id: mat.material_id || mat.id,
+      chapter_id: mat.chapter_id,
+      title: mat.material_name || mat.title || '',
+      material_type: mat.material_type || 'DOCUMENT',
+      content_link: mat.content_link || ''
+    });
+    setShowEditMaterialModal(true);
+  };
+
+  const handleUpdateMaterial = async (e) => {
+    e.preventDefault();
+    if (!editingMaterial || !editingMaterial.title.trim()) return;
+
+    try {
+      await updateMaterialAPI(editingMaterial.material_id, {
+        title: editingMaterial.title.trim(),
+        material_type: editingMaterial.material_type,
+        content_link: editingMaterial.content_link.trim() || undefined,
+        chapter_id: editingMaterial.chapter_id
+      });
+      setShowEditMaterialModal(false);
+      setEditingMaterial(null);
+      fetchClassDetail();
+    } catch (err) {
+      console.error('Error updating material:', err);
+      alert(err.response?.data?.error || 'Không thể cập nhật học liệu. Vui lòng thử lại.');
+    }
+  };
+
+  const handleAddAnnouncement = async (e) => {
+    e.preventDefault();
+    if (!newAnnouncementTitle.trim() || !newAnnouncementContent.trim()) return;
+    try {
+      await createAnnouncementAPI({
+        class_id: Number(courseId),
+        title: newAnnouncementTitle.trim(),
+        content: newAnnouncementContent.trim()
+      });
+      setNewAnnouncementTitle('');
+      setNewAnnouncementContent('');
+      setShowAddAnnouncementModal(false);
+      fetchAnnouncements();
+    } catch (err) {
+      console.error('Error creating announcement:', err);
+      alert(err.response?.data?.error || 'Không thể tạo thông báo. Vui lòng thử lại.');
+    }
+  };
+
+  const handleDeleteAnnouncement = async (id) => {
+    if (!window.confirm('Bạn có chắc chắn muốn xóa thông báo này?')) return;
+    try {
+      await deleteAnnouncementAPI(id);
+      fetchAnnouncements();
+    } catch (err) {
+      console.error('Error deleting announcement:', err);
+    }
+  };
+
+  const handleGradeChange = (studentId, field, val) => {
+    const numVal = val === '' ? null : Number(val);
+    setClassGrades(prev => prev.map(item => {
+      if (item.student_id === studentId) {
+        const updated = { ...item, [field]: numVal };
+        // Tự động tính điểm tổng kết (10% quiz + 20% assign + 30% mid + 40% final)
+        const q = updated.quiz_grade ?? 0;
+        const a = updated.assignment_grade ?? 0;
+        const m = updated.midterm_grade ?? 0;
+        const f = updated.final_grade ?? 0;
+        if (updated.quiz_grade != null || updated.assignment_grade != null || updated.midterm_grade != null || updated.final_grade != null) {
+          updated.total_grade = Number((q * 0.10 + a * 0.20 + m * 0.30 + f * 0.40).toFixed(2));
+        }
+        return updated;
+      }
+      return item;
+    }));
+  };
+
+  const handleSaveBatchGrades = async () => {
+    setIsSavingGrades(true);
+    try {
+      await saveBatchGradesAPI({
+        class_id: Number(courseId),
+        grades: classGrades
+      });
+      alert('Đã lưu bảng điểm thành công!');
+      fetchGradesData();
+    } catch (err) {
+      console.error('Error saving grades:', err);
+      alert(err.response?.data?.error || 'Không thể lưu bảng điểm. Vui lòng thử lại.');
+    } finally {
+      setIsSavingGrades(false);
+    }
+  };
+
   const confirmDelete = (e, type, id) => {
     e.stopPropagation();
     setItemToDelete({ type, id });
@@ -289,6 +433,48 @@ function CourseDetail() {
               </div>
             )}
 
+            {/* BLOCK THÔNG BÁO LỚP HỌC (ANNOUNCEMENTS BANNER) */}
+            <div style={{ background: '#e6fffa', border: '1px solid #b2f5ea', borderRadius: '8px', padding: '16px 20px', marginBottom: '20px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                <h3 style={{ margin: 0, color: '#234e52', fontSize: '16px' }}>📢 THÔNG BÁO LỚP HỌC</h3>
+                {hasEditingPrivileges && (
+                  <button 
+                    onClick={() => setShowAddAnnouncementModal(true)}
+                    style={{ background: '#234e52', color: '#fff', border: 'none', padding: '6px 12px', borderRadius: '4px', cursor: 'pointer', fontSize: '13px', fontWeight: 'bold' }}
+                  >
+                    + Tạo thông báo mới
+                  </button>
+                )}
+              </div>
+              {announcements.length > 0 ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  {announcements.map((anc) => (
+                    <div key={anc.announcement_id} style={{ background: '#fff', padding: '12px 16px', borderRadius: '6px', border: '1px solid #e2e8f0' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <strong style={{ color: '#2d3748', fontSize: '15px' }}>{anc.title}</strong>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                          <span style={{ fontSize: '12px', color: '#718096' }}>
+                            {anc.author_name || 'Giảng viên'} - {anc.created_at ? new Date(anc.created_at).toLocaleDateString('vi-VN') : ''}
+                          </span>
+                          {hasEditingPrivileges && (
+                            <button 
+                              onClick={() => handleDeleteAnnouncement(anc.announcement_id)}
+                              style={{ background: 'transparent', border: 'none', color: '#e53e3e', cursor: 'pointer', fontSize: '12px', fontWeight: 'bold' }}
+                            >
+                              ✕ Xóa
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                      <p style={{ margin: '6px 0 0 0', color: '#4a5568', fontSize: '14px', whiteSpace: 'pre-wrap' }}>{anc.content}</p>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div style={{ fontSize: '14px', color: '#4a5568', fontStyle: 'italic' }}>Chưa có thông báo mới cho lớp học này.</div>
+              )}
+            </div>
+
             {/* THANH CHỨA TÁC VỤ TAB (Khóa học / Điểm) */}
             <div className="tabs-bar">
               <button 
@@ -354,28 +540,19 @@ function CourseDetail() {
                           <div className="teacher-item-actions">
                             <button 
                               className="add-item-btn" 
-                              onClick={() => {
-                                setTargetChapterId(chapter.chapter_id);
-                                setShowAddMaterialModal(true);
-                              }}
+                              onClick={() => navigate(`/lms/course/${courseId}/chapter/${chapter.chapter_id}/add-material?order=${chapter.chapter_order || 1}`)}
                             >
                               + Thêm Tài liệu/Video
                             </button>
                             <button 
                               className="add-item-btn" 
-                              onClick={() => {
-                                setTargetChapterId(chapter.chapter_id);
-                                setShowAddQuizModal(true);
-                              }}
+                              onClick={() => navigate(`/lms/course/${courseId}/chapter/${chapter.chapter_id}/add-quiz`)}
                             >
                               + Thêm bài Quiz
                             </button>
                             <button 
                               className="add-item-btn" 
-                              onClick={() => {
-                                setTargetChapterId(chapter.chapter_id);
-                                setShowAddForumModal(true);
-                              }}
+                              onClick={() => navigate(`/lms/course/${courseId}/chapter/${chapter.chapter_id}/add-forum`)}
                             >
                               + Thêm Diễn đàn thảo luận
                             </button>
@@ -396,13 +573,23 @@ function CourseDetail() {
                               <span>{mat.material_name || mat.title || 'Tài liệu'}</span>
                             </div>
                             {hasEditingPrivileges && (
-                              <button 
-                                className="delete-item-btn-small" 
-                                onClick={(e) => confirmDelete(e, 'material', mat.material_id || mat.id)}
-                                title="Xóa tài liệu"
-                              >
-                                🗑️ Xóa
-                              </button>
+                              <div style={{ display: 'flex', gap: '6px' }} onClick={(e) => e.stopPropagation()}>
+                                <button 
+                                  className="delete-item-btn-small" 
+                                  style={{ background: '#3182ce', borderColor: '#3182ce' }}
+                                  onClick={(e) => handleOpenEditMaterial(e, mat)}
+                                  title="Sửa học liệu"
+                                >
+                                  ✏️ Sửa
+                                </button>
+                                <button 
+                                  className="delete-item-btn-small" 
+                                  onClick={(e) => confirmDelete(e, 'material', mat.material_id || mat.id)}
+                                  title="Xóa tài liệu"
+                                >
+                                  🗑️ Xóa
+                                </button>
+                              </div>
                             )}
                           </div>
                         ))}
@@ -415,13 +602,23 @@ function CourseDetail() {
                               <span>{quiz.quiz_name || quiz.title || 'Quiz'}</span>
                             </div>
                             {hasEditingPrivileges && (
-                              <button 
-                                className="delete-item-btn-small" 
-                                onClick={(e) => confirmDelete(e, 'quiz', quiz.quiz_id || quiz.id)}
-                                title="Xóa Quiz"
-                              >
-                                🗑️ Xóa
-                              </button>
+                              <div style={{ display: 'flex', gap: '6px' }} onClick={(e) => e.stopPropagation()}>
+                                <button 
+                                  className="delete-item-btn-small" 
+                                  style={{ background: '#3182ce', borderColor: '#3182ce' }}
+                                  onClick={(e) => navigate(`/lms/course/${courseId}/quiz/${quiz.quiz_id || quiz.id}/edit`)}
+                                  title="Sửa Quiz"
+                                >
+                                  ✏️ Sửa
+                                </button>
+                                <button 
+                                  className="delete-item-btn-small" 
+                                  onClick={(e) => confirmDelete(e, 'quiz', quiz.quiz_id || quiz.id)}
+                                  title="Xóa Quiz"
+                                >
+                                  🗑️ Xóa
+                                </button>
+                              </div>
                             )}
                           </div>
                         ))}
@@ -467,14 +664,169 @@ function CourseDetail() {
             ) : (
               // --- DIỆN MẠO TAB ĐIỂM SỐ ---
               <div style={{ backgroundColor: '#fff', padding: '20px', borderRadius: '8px', border: '1px solid #ccc' }}>
-                <h3>Bảng điểm chi tiết môn học</h3>
-                <p style={{ marginTop: '10px', color: '#666' }}>Chưa có dữ liệu điểm số đồng bộ cho học kỳ này.</p>
+                {hasEditingPrivileges ? (
+                  /* GIAO DIỆN CHẤM ĐIỂM DÀNH CHO GIẢNG VIÊN */
+                  <div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
+                      <h3 style={{ margin: 0 }}>📊 Bảng điểm sinh viên lớp {courseId}</h3>
+                      <button 
+                        onClick={handleSaveBatchGrades}
+                        disabled={isSavingGrades}
+                        style={{ background: '#008b44', color: '#fff', border: 'none', padding: '8px 18px', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer' }}
+                      >
+                        {isSavingGrades ? 'Đang lưu...' : '💾 Lưu bảng điểm'}
+                      </button>
+                    </div>
+
+                    <div style={{ overflowX: 'auto' }}>
+                      <table className="student-data-table">
+                        <thead>
+                          <tr>
+                            <th>#</th>
+                            <th>MSSV</th>
+                            <th>Tên Sinh viên</th>
+                            <th>Quiz (10%)</th>
+                            <th>Bài tập (20%)</th>
+                            <th>Giữa kỳ (30%)</th>
+                            <th>Cuối kỳ (40%)</th>
+                            <th>Tổng kết</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {classGrades.length > 0 ? (
+                            classGrades.map((g, idx) => (
+                              <tr key={g.student_id}>
+                                <td>{idx + 1}</td>
+                                <td><strong>{g.student_id}</strong></td>
+                                <td>{g.user_name || 'N/A'}</td>
+                                <td>
+                                  <input 
+                                    type="number" 
+                                    step="0.1" min="0" max="10" 
+                                    style={{ width: '70px', padding: '4px', textAlign: 'center' }}
+                                    value={g.quiz_grade ?? ''} 
+                                    onChange={(e) => handleGradeChange(g.student_id, 'quiz_grade', e.target.value)}
+                                  />
+                                </td>
+                                <td>
+                                  <input 
+                                    type="number" 
+                                    step="0.1" min="0" max="10" 
+                                    style={{ width: '70px', padding: '4px', textAlign: 'center' }}
+                                    value={g.assignment_grade ?? ''} 
+                                    onChange={(e) => handleGradeChange(g.student_id, 'assignment_grade', e.target.value)}
+                                  />
+                                </td>
+                                <td>
+                                  <input 
+                                    type="number" 
+                                    step="0.1" min="0" max="10" 
+                                    style={{ width: '70px', padding: '4px', textAlign: 'center' }}
+                                    value={g.midterm_grade ?? ''} 
+                                    onChange={(e) => handleGradeChange(g.student_id, 'midterm_grade', e.target.value)}
+                                  />
+                                </td>
+                                <td>
+                                  <input 
+                                    type="number" 
+                                    step="0.1" min="0" max="10" 
+                                    style={{ width: '70px', padding: '4px', textAlign: 'center' }}
+                                    value={g.final_grade ?? ''} 
+                                    onChange={(e) => handleGradeChange(g.student_id, 'final_grade', e.target.value)}
+                                  />
+                                </td>
+                                <td>
+                                  <strong style={{ color: (g.total_grade ?? 0) >= 5.0 ? '#008b44' : '#e53e3e' }}>
+                                    {g.total_grade != null ? Number(g.total_grade).toFixed(2) : '--'}
+                                  </strong>
+                                </td>
+                              </tr>
+                            ))
+                          ) : (
+                            <tr>
+                              <td colSpan="8" style={{ textAlign: 'center', padding: '20px', color: '#718096' }}>Chưa có sinh viên nào đăng ký lớp học này.</td>
+                            </tr>
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                ) : (
+                  /* GIAO DIỆN XEM ĐIỂM DÀNH CHO SINH VIÊN */
+                  <div>
+                    <h3>Bảng điểm cá nhân môn học</h3>
+                    {studentOwnGrade ? (
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '15px', marginTop: '15px' }}>
+                        <div style={{ background: '#f7fafc', padding: '12px', borderRadius: '6px', border: '1px solid #e2e8f0', textAlign: 'center' }}>
+                          <span style={{ fontSize: '12px', color: '#718096' }}>Quiz (10%)</span>
+                          <div style={{ fontSize: '20px', fontWeight: 'bold' }}>{studentOwnGrade.quiz_grade ?? '--'}</div>
+                        </div>
+                        <div style={{ background: '#f7fafc', padding: '12px', borderRadius: '6px', border: '1px solid #e2e8f0', textAlign: 'center' }}>
+                          <span style={{ fontSize: '12px', color: '#718096' }}>Bài tập (20%)</span>
+                          <div style={{ fontSize: '20px', fontWeight: 'bold' }}>{studentOwnGrade.assignment_grade ?? '--'}</div>
+                        </div>
+                        <div style={{ background: '#f7fafc', padding: '12px', borderRadius: '6px', border: '1px solid #e2e8f0', textAlign: 'center' }}>
+                          <span style={{ fontSize: '12px', color: '#718096' }}>Giữa kỳ (30%)</span>
+                          <div style={{ fontSize: '20px', fontWeight: 'bold' }}>{studentOwnGrade.midterm_grade ?? '--'}</div>
+                        </div>
+                        <div style={{ background: '#f7fafc', padding: '12px', borderRadius: '6px', border: '1px solid #e2e8f0', textAlign: 'center' }}>
+                          <span style={{ fontSize: '12px', color: '#718096' }}>Cuối kỳ (40%)</span>
+                          <div style={{ fontSize: '20px', fontWeight: 'bold' }}>{studentOwnGrade.final_grade ?? '--'}</div>
+                        </div>
+                        <div style={{ background: '#e6fffa', padding: '12px', borderRadius: '6px', border: '1px solid #b2f5ea', textAlign: 'center' }}>
+                          <span style={{ fontSize: '12px', color: '#234e52', fontWeight: 'bold' }}>Điểm Tổng Kết</span>
+                          <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#008b44' }}>{studentOwnGrade.total_grade ?? '--'}</div>
+                        </div>
+                      </div>
+                    ) : (
+                      <p style={{ marginTop: '10px', color: '#666' }}>Chưa có dữ liệu điểm số công bố cho học kỳ này.</p>
+                    )}
+                  </div>
+                )}
               </div>
             )}
           </>
         )}
 
       </div>
+
+      {/* Modal Tạo Thông Báo Lớp Mới */}
+      {showAddAnnouncementModal && (
+        <div className="modal-overlay" onClick={() => setShowAddAnnouncementModal(false)}>
+          <form className="modal-content" onClick={(e) => e.stopPropagation()} onSubmit={handleAddAnnouncement}>
+            <div className="modal-header">
+              <h3>Tạo thông báo lớp học mới</h3>
+              <button type="button" className="close-btn" onClick={() => setShowAddAnnouncementModal(false)}>✕</button>
+            </div>
+            <div className="modal-body">
+              <div className="form-group">
+                <label>Tiêu đề thông báo:</label>
+                <input 
+                  type="text" 
+                  value={newAnnouncementTitle} 
+                  onChange={(e) => setNewAnnouncementTitle(e.target.value)} 
+                  placeholder="Nhập tiêu đề thông báo..." 
+                  required 
+                />
+              </div>
+              <div className="form-group">
+                <label>Nội dung thông báo:</label>
+                <textarea 
+                  value={newAnnouncementContent} 
+                  onChange={(e) => setNewAnnouncementContent(e.target.value)} 
+                  placeholder="Nhập nội dung chi tiết thông báo..." 
+                  rows="4" 
+                  required 
+                />
+              </div>
+            </div>
+            <div className="modal-footer">
+              <button type="submit" className="confirm-btn">Đăng thông báo</button>
+              <button type="button" className="dismiss-btn" onClick={() => setShowAddAnnouncementModal(false)}>Hủy</button>
+            </div>
+          </form>
+        </div>
+      )}
 
       {/* Modal Thêm Chương mới */}
       {showAddChapterModal && (
@@ -628,6 +980,54 @@ function CourseDetail() {
             <div className="modal-footer">
               <button type="submit" className="confirm-btn">Thêm học liệu</button>
               <button type="button" className="dismiss-btn" onClick={() => setShowAddMaterialModal(false)}>Hủy</button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      {/* Modal Chỉnh Sửa Học Liệu */}
+      {showEditMaterialModal && editingMaterial && (
+        <div className="modal-overlay" onClick={() => setShowEditMaterialModal(false)}>
+          <form className="modal-content" onClick={(e) => e.stopPropagation()} onSubmit={handleUpdateMaterial}>
+            <div className="modal-header">
+              <h3>Chỉnh sửa học liệu</h3>
+              <button type="button" className="close-btn" onClick={() => setShowEditMaterialModal(false)}>✕</button>
+            </div>
+            <div className="modal-body">
+              <div className="form-group">
+                <label>Loại học liệu:</label>
+                <select 
+                  value={editingMaterial.material_type} 
+                  onChange={(e) => setEditingMaterial({ ...editingMaterial, material_type: e.target.value })}
+                  style={{ padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e0', fontSize: '14px', outline: 'none' }}
+                >
+                  <option value="DOCUMENT">📄 Tài liệu (PDF/Word/PowerPoint)</option>
+                  <option value="VIDEO">🎥 Video bài giảng (Youtube link/Video link)</option>
+                </select>
+              </div>
+              <div className="form-group">
+                <label>Tiêu đề học liệu:</label>
+                <input 
+                  type="text" 
+                  value={editingMaterial.title} 
+                  onChange={(e) => setEditingMaterial({ ...editingMaterial, title: e.target.value })} 
+                  placeholder="Nhập tiêu đề học liệu..." 
+                  required 
+                />
+              </div>
+              <div className="form-group">
+                <label>Đường dẫn liên kết (Link tải/Link xem):</label>
+                <input 
+                  type="url" 
+                  value={editingMaterial.content_link} 
+                  onChange={(e) => setEditingMaterial({ ...editingMaterial, content_link: e.target.value })} 
+                  placeholder="https://example.com/..." 
+                />
+              </div>
+            </div>
+            <div className="modal-footer">
+              <button type="submit" className="confirm-btn">Lưu thay đổi</button>
+              <button type="button" className="dismiss-btn" onClick={() => setShowEditMaterialModal(false)}>Hủy</button>
             </div>
           </form>
         </div>

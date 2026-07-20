@@ -3,6 +3,22 @@ import { getUserProfileAPI } from '../../../api/StudentInfo/Profile/users';
 import { getUserRequestsAPI, createStudentRequestAPI } from '../../../api/StudentInfo/ServiceStudent/requests';
 import './ServiceStudent.css';
 
+const formatDate = (dateStr) => {
+  if (!dateStr) return '--';
+  try {
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return dateStr;
+    const day = String(d.getDate()).padStart(2, '0');
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const year = d.getFullYear();
+    const hours = String(d.getHours()).padStart(2, '0');
+    const minutes = String(d.getMinutes()).padStart(2, '0');
+    return `${day}/${month}/${year} ${hours}:${minutes}`;
+  } catch (e) {
+    return dateStr;
+  }
+};
+
 function ServiceStudent() {
   const [studentData, setStudentData] = useState(null);
   const [requests, setRequests] = useState([]);
@@ -75,8 +91,8 @@ function ServiceStudent() {
   }
 
   // Tách danh sách phiếu đang xử lý và đã hoàn thành
-  const pendingRequests = requests.filter(r => r.tinhTrang === 'Đang xử lý' || r.status === 'PENDING');
-  const completedRequests = requests.filter(r => r.tinhTrang === 'Đã xử lý' || r.status === 'COMPLETED');
+  const pendingRequests = requests.filter(r => r.tinhTrang === 'Đang xử lý' || r.status === 'PENDING' || r.status === 'Đang xử lý');
+  const completedRequests = requests.filter(r => r.tinhTrang === 'Đã xử lý' || r.status === 'COMPLETED' || r.status === 'Đã xử lý');
 
   // Format thông tin sinh viên hiển thị
   const displayInfo = {
@@ -224,7 +240,7 @@ function ServiceStudent() {
                     <td>{req.maPhieu || req.request_code}</td>
                     <td>{req.noiDung || req.reason}</td>
                     <td>{req.tinhTrang || req.status}</td>
-                    <td>{req.ngayDangKy || req.created_at}</td>
+                    <td>{formatDate(req.ngayDangKy || req.created_at)}</td>
                   </tr>
                 ))
               ) : (
@@ -261,7 +277,7 @@ function ServiceStudent() {
                     <td>{req.noiNhan || req.location}</td>
                     <td>{req.noiDung || req.reason}</td>
                     <td className="status-success">{req.tinhTrang || req.status}</td>
-                    <td>{req.ngayDangKy || req.created_at}</td>
+                    <td>{formatDate(req.ngayDangKy || req.created_at)}</td>
                   </tr>
                 ))
               ) : (

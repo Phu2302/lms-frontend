@@ -1,7 +1,14 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { getQuizQuestionsAPI } from "../../../../api/LMS/CourseDetail/quizzes";
-import { getMyQuizEntriesAPI, createQuizEntryAPI, submitQuizEntryAPI } from "../../../../api/LMS/CourseDetail/quizEntries";
+import { 
+  getMyQuizEntriesAPI, 
+  getAllQuizEntriesAPI, 
+  createQuizEntryAPI, 
+  submitQuizEntryAPI, 
+  deleteQuizEntryAPI,
+  gradeQuestionResponseAPI 
+} from "../../../../api/LMS/CourseDetail/quizEntries";
 import { getStudentQuestionResponsesAPI, submitBulkResponsesAPI } from "../../../../api/LMS/CourseDetail/studentQuestionResponses";
 import Header from "../../../../components/Header/Header";
 import "./QuizPage.css";
@@ -24,17 +31,29 @@ function QuizPage() {
   const [answers, setAnswers] = useState({});
   const [flags, setFlags] = useState({});
   const [entryId, setEntryId] = useState(null);
+  const [currentEntryObj, setCurrentEntryObj] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const [result, setResult] = useState(null);
 
-  // New states for Landing page & Attempt history
+  // Countdown timer state
+  const [remainingSeconds, setRemainingSeconds] = useState(null);
+  const autoSubmittedRef = useRef(false);
+
+  // States for Landing page & Attempt history
   const [isStarted, setIsStarted] = useState(false);
   const [pastEntries, setPastEntries] = useState([]);
+  const [allEntries, setAllEntries] = useState([]); // Dành cho Giảng viên xem tất cả lượt làm
   const [selectedReviewEntry, setSelectedReviewEntry] = useState(null);
   const [reviewResponses, setReviewResponses] = useState([]);
 
+  // Manual grading state
+  const [manualScores, setManualScores] = useState({});
+  const [savingManualScore, setSavingManualScore] = useState(false);
+
   // Lấy thông tin user
   const currentUser = JSON.parse(localStorage.getItem("user") || "{}");
+  const userRole = currentUser?.role ? String(currentUser.role) : "1";
+  const isTeacher = userRole === "2" || userRole === "3";
 
   // Load quiz data và lịch sử khi mount
   useEffect(() => {
@@ -43,18 +62,54 @@ function QuizPage() {
     }
   }, [quizId]);
 
+  // ĐỒNG HỒ ĐẾM NGƯỢC THỜI GIAN LÀM BÀI
+  useEffect(() => {
+    let timerId = null;
+
+    if (isStarted && currentEntryObj && quizData) {
+      const timeLimitMinutes = Number(currentEntryObj.time_limit || quizData.time_limit || 30);
+      const startTimeMs = new Date(currentEntryObj.entry_start_time || Date.now()).getTime();
+      const endTimeMs = startTimeMs + timeLimitMinutes * 60 * 1000;
+
+      const updateRemaining = () => {
+        const now = Date.now();
+        const diffSec = Math.floor((endTimeMs - now) / 1000);
+
+        if (diffSec <= 0) {
+          setRemainingSeconds(0);
+          if (!autoSubmittedRef.current && !submitting) {
+            autoSubmittedRef.current = true;
+            alert("⌛ Đã hết thời gian làm bài! Hệ thống đang tự động nộp bài làm của bạn.");
+            handleAutoSubmitOnTimeOut();
+          }
+        } else {
+          setRemainingSeconds(diffSec);
+        }
+      };
+
+      updateRemaining();
+      timerId = setInterval(updateRemaining, 1000);
+    }
+
+    return () => {
+      if (timerId) clearInterval(timerId);
+    };
+  }, [isStarted, currentEntryObj, quizData]);
+
   const initQuiz = async () => {
     setLoading(true);
     setError("");
     try {
-      // 1. Lấy quiz kèm câu hỏi và options
       const quizRes = await getQuizQuestionsAPI(quizId);
       const data = quizRes.data;
       setQuizData(data);
       setQuestions(data.questions || []);
 
-      // 2. Tải lịch sử làm bài của sinh viên
       await fetchPastEntries();
+
+      if (isTeacher) {
+        await fetchAllEntries();
+      }
     } catch (err) {
       console.error("Lỗi tải quiz:", err);
       const status = err.response?.status;
@@ -75,18 +130,117 @@ function QuizPage() {
       const res = await getMyQuizEntriesAPI(quizId);
       setPastEntries(res.data || []);
     } catch (err) {
-      console.error("Lỗi tải lịch sử thi:", err);
+      console.error("Lỗi tải lịch sử thi cá nhân:", err);
+    }
+  };
+
+  const fetchAllEntries = async () => {
+    try {
+      const res = await getAllQuizEntriesAPI(quizId);
+      setAllEntries(res.data || []);
+    } catch (err) {
+      console.error("Lỗi tải tất cả lượt thi cho giảng viên:", err);
+    }
+  };
+
+  const shuffleQuestionsAndOptions = (qList) => {
+    if (!qList || qList.length === 0) return [];
+    // Fisher-Yates Shuffle
+    const shuffledQ = [...qList].sort(() => Math.random() - 0.5);
+    return shuffledQ.map(q => {
+      if (q.options && q.options.length > 0) {
+        return {
+          ...q,
+          options: [...q.options].sort(() => Math.random() - 0.5)
+        };
+      }
+      return q;
+    });
+  };
+
+  const handleDeleteEntry = async (entryIdToDelete) => {
+    if (!window.confirm(`Bạn có chắc chắn muốn xóa lượt thi #${entryIdToDelete}? Hành động này sẽ hủy kết quả thi này và cho phép sinh viên đăng nhập làm lại.`)) {
+      return;
+    }
+    try {
+      await deleteQuizEntryAPI(entryIdToDelete);
+      alert(`Đã xóa lượt thi #${entryIdToDelete} thành công! Sinh viên có thể làm lại bài thi.`);
+      fetchAllEntries();
+      fetchPastEntries();
+    } catch (err) {
+      console.error("Lỗi xóa lượt thi:", err);
+      alert("Xóa lượt thi thất bại: " + (err.response?.data?.error || err.message));
+    }
+  };
+
+  const handleExportCSV = () => {
+    const dataToExport = isTeacher ? allEntries : pastEntries;
+    if (dataToExport.length === 0) {
+      alert("Chưa có dữ liệu lượt thi nào để xuất file!");
+      return;
+    }
+
+    let csvContent = "\uFEFFLuot_Thi_ID,MSSV,Thoi_Gian_Bat_Dau,Diem_So,Trang_Thai\n";
+    dataToExport.forEach(e => {
+      const scoreStr = e.entry_score !== null && e.entry_score !== undefined ? Number(e.entry_score).toFixed(2) : "Dang lam do";
+      const status = e.entry_score !== null && e.entry_score !== undefined ? (Number(e.entry_score) >= 5 ? "Dat" : "Chua dat") : "Chua nop";
+      csvContent += `${e.entry_id},${e.student_id || currentUser.user_id},"${formatDate(e.entry_start_time)}",${scoreStr},${status}\n`;
+    });
+
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", `Bang_Diem_Quiz_${quizId}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const handleManualGrade = async (responseId, questionId, scoreVal) => {
+    if (scoreVal === "" || isNaN(Number(scoreVal))) return;
+    setSavingManualScore(true);
+    try {
+      const res = await gradeQuestionResponseAPI(responseId, Number(scoreVal));
+      alert(`Đã cập nhật điểm cho câu hỏi! Điểm mới của bài làm: ${res.data.new_entry_score}`);
+      
+      setSelectedReviewEntry(prev => ({
+        ...prev,
+        entry_score: res.data.new_entry_score
+      }));
+
+      const respRes = await getStudentQuestionResponsesAPI(selectedReviewEntry.entry_id);
+      setReviewResponses(respRes.data || []);
+      if (isTeacher) fetchAllEntries();
+    } catch (err) {
+      console.error("Lỗi chấm điểm thủ công:", err);
+      alert("Không thể lưu điểm: " + (err.response?.data?.error || err.message));
+    } finally {
+      setSavingManualScore(false);
     }
   };
 
   const handleStartNewAttempt = async () => {
     try {
       setLoading(true);
+      autoSubmittedRef.current = false;
       const entryRes = await createQuizEntryAPI({
         quiz_id: Number(quizId),
-        time_limit: quizData?.time_limit || null,
+        time_limit: quizData?.time_limit || 30,
       });
-      setEntryId(entryRes.data.entry_id);
+      const newEntryId = entryRes.data.entry_id;
+      setEntryId(newEntryId);
+      setCurrentEntryObj({
+        entry_id: newEntryId,
+        entry_start_time: new Date().toISOString(),
+        time_limit: quizData?.time_limit || 30
+      });
+
+      // Kiểm tra cấu hình trộn đề ngẫu nhiên (shuffle_questions)
+      if (quizData?.shuffle_questions !== false) {
+        setQuestions(shuffleQuestionsAndOptions(quizData?.questions || []));
+      }
+
       setAnswers({});
       setFlags({});
       setCurrentIndex(0);
@@ -102,9 +256,10 @@ function QuizPage() {
   const handleResumeAttempt = async (entry) => {
     try {
       setLoading(true);
+      autoSubmittedRef.current = false;
       setEntryId(entry.entry_id);
+      setCurrentEntryObj(entry);
 
-      // Tải lại tiến trình câu trả lời đã lưu
       const respRes = await getStudentQuestionResponsesAPI(entry.entry_id);
       const savedAnswers = {};
       (respRes.data || []).forEach(resp => {
@@ -114,7 +269,6 @@ function QuizPage() {
           try {
             ansVal = JSON.parse(ansVal);
           } catch(e) {}
-          // convert to number if it's a choice index, otherwise leave as string
           savedAnswers[questionIdx] = isNaN(ansVal) ? ansVal : Number(ansVal);
         }
       });
@@ -134,7 +288,15 @@ function QuizPage() {
     try {
       setLoading(true);
       const respRes = await getStudentQuestionResponsesAPI(entry.entry_id);
-      setReviewResponses(respRes.data || []);
+      const resps = respRes.data || [];
+      setReviewResponses(resps);
+
+      const initialManualScores = {};
+      resps.forEach(r => {
+        initialManualScores[r.response_id] = r.achieved_score ?? 0;
+      });
+      setManualScores(initialManualScores);
+
       setSelectedReviewEntry(entry);
     } catch (err) {
       console.error("Lỗi tải chi tiết bài làm:", err);
@@ -181,6 +343,7 @@ function QuizPage() {
     if (window.confirm("Bạn đang làm bài, tiến trình làm bài đã được tự động lưu lại. Bạn có chắc chắn muốn thoát ra ngoài?")) {
       setIsStarted(false);
       fetchPastEntries();
+      if (isTeacher) fetchAllEntries();
     }
   };
 
@@ -197,6 +360,24 @@ function QuizPage() {
     setReviewResponses([]);
   };
 
+  const handleAutoSubmitOnTimeOut = async () => {
+    if (!entryId) return;
+    setSubmitting(true);
+    try {
+      const responses = questions.map((q, idx) => ({
+        question_id: q.question_id,
+        student_answer: answers[idx] !== undefined ? answers[idx] : null,
+      })).filter(r => r.student_answer !== null);
+
+      const submitRes = await submitQuizEntryAPI(entryId, responses);
+      setResult(submitRes.data);
+    } catch (err) {
+      console.error("Lỗi tự động nộp bài khi hết giờ:", err);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   const handleSubmitQuiz = async () => {
     if (!entryId) {
       alert("Không thể nộp bài: Quiz entry chưa được tạo.");
@@ -210,13 +391,11 @@ function QuizPage() {
 
     setSubmitting(true);
     try {
-      // Chuẩn bị danh sách câu trả lời
       const responses = questions.map((q, idx) => ({
         question_id: q.question_id,
         student_answer: answers[idx] !== undefined ? answers[idx] : null,
       })).filter(r => r.student_answer !== null);
 
-      // Nộp bài
       const submitRes = await submitQuizEntryAPI(entryId, responses);
       setResult(submitRes.data);
     } catch (err) {
@@ -239,8 +418,35 @@ function QuizPage() {
     return isNaN(num) ? score : num.toFixed(2);
   };
 
+  const formatTimerString = (seconds) => {
+    if (seconds === null || seconds === undefined) return "--:--";
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+  };
+
+  const computeAnalytics = () => {
+    const validEntries = allEntries.filter(e => e.entry_score !== null && e.entry_score !== undefined);
+    const totalCount = validEntries.length;
+    if (totalCount === 0) return { totalCount: 0, avgScore: 0, maxScore: 0, passRate: 0 };
+
+    const scores = validEntries.map(e => Number(e.entry_score));
+    const avgScore = (scores.reduce((a, b) => a + b, 0) / totalCount).toFixed(2);
+    const maxScore = Math.max(...scores).toFixed(2);
+    const passCount = scores.filter(s => s >= 5.0).length;
+    const passRate = Math.round((passCount / totalCount) * 100);
+
+    return { totalCount, avgScore, maxScore, passRate };
+  };
+
+  const analytics = computeAnalytics();
   const currentQuestion = questions[currentIndex];
   const unsubmittedEntry = pastEntries.find(e => e.entry_score === null);
+
+  // Kiểm tra quyền xem đáp án chuẩn của Sinh viên
+  const showAnswersMode = quizData?.show_answers_mode || 'AFTER_DEADLINE';
+  const isDeadlinePassed = !quizData?.deadline_time || new Date() >= new Date(quizData.deadline_time);
+  const canSeeCorrectAnswers = isTeacher || showAnswersMode === 'ALWAYS' || (showAnswersMode === 'AFTER_DEADLINE' && isDeadlinePassed);
 
   // 1. Hiển thị kết quả sau khi nộp
   if (result) {
@@ -341,7 +547,6 @@ function QuizPage() {
   if (selectedReviewEntry) {
     return (
       <div className="quiz-container">
-        {/* NAVBAR */}
         <Header view="courses" />
 
         <div className="quiz-body" style={{ display: "block" }}>
@@ -350,7 +555,7 @@ function QuizPage() {
               <div>
                 <h2 style={{ color: "#005a2b", margin: 0 }}>Xem lại bài làm</h2>
                 <div style={{ color: "#666", fontSize: "14px", marginTop: "4px" }}>
-                  Lượt thi #{selectedReviewEntry.entry_id} • Bắt đầu: {formatDate(selectedReviewEntry.entry_start_time)}
+                  Lượt thi #{selectedReviewEntry.entry_id} • Sinh viên MSSV: <strong>{selectedReviewEntry.student_id || currentUser.user_id}</strong> • Bắt đầu: {formatDate(selectedReviewEntry.entry_start_time)}
                 </div>
               </div>
               <div style={{ textAlign: "right" }}>
@@ -360,23 +565,38 @@ function QuizPage() {
               </div>
             </div>
 
+            {/* THÔNG BÁO BẢO MẬT ĐÁP ÁN DÀNH CHO SINH VIÊN */}
+            {!canSeeCorrectAnswers && (
+              <div style={{ background: '#fffaf0', border: '1.5px solid #fbd38d', borderRadius: '8px', padding: '14px 18px', margin: '20px 0', color: '#c05621', fontSize: '14px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <span style={{ fontSize: '20px' }}>🔒</span>
+                <div>
+                  <strong>Đáp án chuẩn hiện đang được bảo mật.</strong>
+                  <br />
+                  {showAnswersMode === 'NEVER' 
+                    ? 'Giảng viên đã bật chế độ ẩn đáp án chuẩn cho bài quiz này.'
+                    : `Đáp án chi tiết sẽ được công bố sau khi hết Hạn nộp bài (${formatDate(quizData?.deadline_time)}).`}
+                </div>
+              </div>
+            )}
+
             <div style={{ display: "flex", flexDirection: "column", gap: "25px", marginTop: "20px" }}>
               {questions.map((q, idx) => {
                 const response = reviewResponses.find(r => Number(r.question_id) === Number(q.question_id));
                 const studentAnswer = response ? response.student_answer : null;
                 const isCorrect = response ? Number(response.achieved_score) > 0 : false;
 
-                // parse correct answer if available
-                const correctIndexes = q.correct_answer_indexes
+                const correctIndexes = canSeeCorrectAnswers && q.correct_answer_indexes
                   ? (Array.isArray(q.correct_answer_indexes) ? q.correct_answer_indexes : [q.correct_answer_indexes]).map(Number)
                   : [];
+
+                const isEssayOrCode = !q.options || q.options.length === 0;
 
                 return (
                   <div key={q.question_id || idx} className="question-card-box" style={{ borderLeft: isCorrect ? "6px solid #2e7d32" : "6px solid #c62828" }}>
                     <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "15px" }}>
-                      <span style={{ fontWeight: "bold", color: "#005a2b" }}>Câu hỏi {idx + 1}</span>
+                      <span style={{ fontWeight: "bold", color: "#005a2b" }}>Câu hỏi {idx + 1} ({q.question_score || 1}đ)</span>
                       <span className={isCorrect ? "review-badge-correct" : "review-badge-incorrect"}>
-                        {isCorrect ? "Đúng" : "Sai"} ({response?.achieved_score || 0}đ)
+                        {isCorrect ? "Đúng" : "Chưa đạt"} ({response?.achieved_score || 0}đ)
                       </span>
                     </div>
 
@@ -387,7 +607,7 @@ function QuizPage() {
                     <div className="options-list">
                       {q.options && q.options.map((opt, optIdx) => {
                         const isStudentSelected = studentAnswer !== null && Number(studentAnswer) === optIdx;
-                        const isCorrectOption = correctIndexes.includes(optIdx);
+                        const isCorrectOption = canSeeCorrectAnswers && correctIndexes.includes(optIdx);
 
                         let optionClass = "option-item-label";
                         if (isStudentSelected) {
@@ -408,34 +628,59 @@ function QuizPage() {
                         );
                       })}
 
-                      {(!q.options || q.options.length === 0) && (
+                      {isEssayOrCode && (
                         <div style={{ marginTop: "10px" }}>
-                          <div style={{ fontWeight: "bold", fontSize: "14px", color: "#666" }}>Câu trả lời của bạn:</div>
+                          <div style={{ fontWeight: "bold", fontSize: "14px", color: "#666" }}>Câu trả lời của sinh viên:</div>
                           <div style={{
                             padding: "10px 15px",
                             background: "#f9f9f9",
                             border: "1px solid #ddd",
                             borderRadius: "6px",
                             margin: "5px 0 10px 0",
-                            fontStyle: "italic"
+                            fontStyle: "italic",
+                            whiteSpace: "pre-wrap"
                           }}>
                             {studentAnswer || "(Trống)"}
                           </div>
-                          {q.short_answer_key && (
+
+                          {canSeeCorrectAnswers && q.short_answer_key && (
                             <>
-                              <div style={{ fontWeight: "bold", fontSize: "14px", color: "#2e7d32" }}>Đáp án chính xác:</div>
+                              <div style={{ fontWeight: "bold", fontSize: "14px", color: "#2e7d32" }}>Đáp án gợi ý:</div>
                               <div style={{
                                 padding: "10px 15px",
                                 background: "#e8f5e9",
                                 border: "1.5px dashed #81c784",
                                 borderRadius: "6px",
-                                margin: "5px 0",
+                                margin: "5px 0 10px 0",
                                 fontWeight: "bold",
                                 color: "#2e7d32"
                               }}>
                                 {q.short_answer_key}
                               </div>
                             </>
+                          )}
+
+                          {/* KHUNG GIẢNG VIÊN CHẤM ĐIỂM THỦ CÔNG CHO CÂU TỰ LUẬN */}
+                          {isTeacher && response && (
+                            <div style={{ background: '#edf2f7', padding: '12px 15px', borderRadius: '6px', border: '1px solid #cbd5e0', marginTop: '10px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                              <span style={{ fontSize: '13px', fontWeight: 'bold', color: '#2d3748' }}>✍️ Chấm điểm thủ công:</span>
+                              <input 
+                                type="number" 
+                                step="0.5" 
+                                min="0" 
+                                max={q.question_score || 10}
+                                style={{ width: '80px', padding: '6px', textAlign: 'center', borderRadius: '4px', border: '1px solid #a0aec0' }}
+                                value={manualScores[response.response_id] ?? 0}
+                                onChange={(e) => setManualScores({ ...manualScores, [response.response_id]: e.target.value })}
+                              />
+                              <button 
+                                onClick={() => handleManualGrade(response.response_id, q.question_id, manualScores[response.response_id])}
+                                disabled={savingManualScore}
+                                style={{ background: '#008b44', color: '#fff', border: 'none', padding: '6px 14px', borderRadius: '4px', cursor: 'pointer', fontSize: '13px', fontWeight: 'bold' }}
+                              >
+                                {savingManualScore ? 'Đang lưu...' : '💾 Lưu điểm'}
+                              </button>
+                            </div>
                           )}
                         </div>
                       )}
@@ -447,7 +692,7 @@ function QuizPage() {
 
             <div style={{ marginTop: "30px", display: "flex", justifyContent: "center" }}>
               <button className="quiz-btn quiz-btn-secondary" onClick={handleCloseReview}>
-                Quay lại trang thông tin quiz
+                Quay lại trang quản lý quiz
               </button>
             </div>
           </div>
@@ -463,7 +708,6 @@ function QuizPage() {
 
     return (
       <div className="quiz-container">
-        {/* NAVBAR */}
         <Header view="courses" />
 
         {loading && (
@@ -478,9 +722,17 @@ function QuizPage() {
         {!loading && (
           <div className="quiz-body" style={{ display: "block" }}>
             <div className="quiz-landing-container">
-              <h2 className="quiz-landing-title">{quizData?.title || "Quiz"}</h2>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <h2 className="quiz-landing-title" style={{ margin: 0 }}>{quizData?.title || "Quiz"}</h2>
+                <button 
+                  onClick={handleExportCSV} 
+                  style={{ background: '#2b6cb0', color: '#fff', border: 'none', padding: '8px 16px', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}
+                >
+                  📥 Xuất báo cáo CSV
+                </button>
+              </div>
               
-              <div className="quiz-info-grid">
+              <div className="quiz-info-grid" style={{ marginTop: '15px' }}>
                 <div className="quiz-info-card">
                   <div className="quiz-info-label">Thời gian mở</div>
                   <div className="quiz-info-value">{formatDate(quizData?.open_time)}</div>
@@ -489,10 +741,10 @@ function QuizPage() {
                   <div className="quiz-info-label">Hạn nộp bài</div>
                   <div className="quiz-info-value">{formatDate(quizData?.deadline_time)}</div>
                 </div>
-                <div className="quiz-info-card">
-                  <div className="quiz-info-label">Thời gian làm bài</div>
-                  <div className="quiz-info-value">
-                    {quizData?.time_limit ? `${quizData.time_limit} phút` : "Không giới hạn"}
+                <div className="quiz-info-card" style={{ background: '#f0fff4', border: '1.5px solid #68d391' }}>
+                  <div className="quiz-info-label" style={{ color: '#276749', fontWeight: 'bold' }}>⏱️ Thời gian làm bài</div>
+                  <div className="quiz-info-value" style={{ color: '#22543d', fontWeight: '800' }}>
+                    {quizData?.time_limit ? `${quizData.time_limit} phút` : "30 phút"}
                   </div>
                 </div>
                 <div className="quiz-info-card">
@@ -503,9 +755,91 @@ function QuizPage() {
                 </div>
               </div>
 
-              {/* Bảng lịch sử các lượt làm bài */}
+              {/* BẢNG THỐNG KÊ PHỔ ĐIỂM (DÀNH CHO GIẢNG VIÊN) */}
+              {isTeacher && (
+                <div style={{ background: '#ebf8ff', border: '1px solid #bee3f8', borderRadius: '12px', padding: '20px', marginBottom: '25px' }}>
+                  <h3 style={{ margin: '0 0 15px 0', color: '#2b6cb0', fontSize: '16px' }}>📊 Thống kê Phổ điểm & Phân tích lớp học</h3>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '12px' }}>
+                    <div style={{ background: '#fff', padding: '12px', borderRadius: '8px', textAlign: 'center', border: '1px solid #e2e8f0' }}>
+                      <span style={{ fontSize: '12px', color: '#718096' }}>Tổng lượt nộp bài</span>
+                      <div style={{ fontSize: '22px', fontWeight: 'bold', color: '#2d3748' }}>{analytics.totalCount}</div>
+                    </div>
+                    <div style={{ background: '#fff', padding: '12px', borderRadius: '8px', textAlign: 'center', border: '1px solid #e2e8f0' }}>
+                      <span style={{ fontSize: '12px', color: '#718096' }}>Điểm trung bình</span>
+                      <div style={{ fontSize: '22px', fontWeight: 'bold', color: '#3182ce' }}>{analytics.avgScore}</div>
+                    </div>
+                    <div style={{ background: '#fff', padding: '12px', borderRadius: '8px', textAlign: 'center', border: '1px solid #e2e8f0' }}>
+                      <span style={{ fontSize: '12px', color: '#718096' }}>Điểm cao nhất</span>
+                      <div style={{ fontSize: '22px', fontWeight: 'bold', color: '#38a169' }}>{analytics.maxScore}</div>
+                    </div>
+                    <div style={{ background: '#fff', padding: '12px', borderRadius: '8px', textAlign: 'center', border: '1px solid #e2e8f0' }}>
+                      <span style={{ fontSize: '12px', color: '#718096' }}>Tỷ lệ Đạt (≥ 5.0)</span>
+                      <div style={{ fontSize: '22px', fontWeight: 'bold', color: analytics.passRate >= 70 ? '#38a169' : '#e53e3e' }}>{analytics.passRate}%</div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* BẢNG QUẢN LÝ DÀNH CHO GIẢNG VIÊN (Nếu userRole == '2' hoặc '3') */}
+              {isTeacher && (
+                <div className="quiz-history-section" style={{ background: '#f8fafc', padding: '20px', borderRadius: '12px', border: '1px solid #cbd5e0', marginBottom: '25px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
+                    <h3 style={{ margin: 0, color: '#008b44' }}>🛡️ Quản lý tất cả lượt thi của Sinh viên (Dành cho Giảng viên)</h3>
+                    <button onClick={fetchAllEntries} style={{ background: '#edf2f7', border: '1px solid #cbd5e0', padding: '6px 12px', borderRadius: '4px', cursor: 'pointer', fontSize: '13px' }}>
+                      🔄 Tải lại danh sách
+                    </button>
+                  </div>
+                  {allEntries.length === 0 ? (
+                    <p style={{ color: "#777", fontStyle: "italic" }}>Chưa có sinh viên nào thực hiện bài quiz này.</p>
+                  ) : (
+                    <table className="quiz-history-table">
+                      <thead>
+                        <tr>
+                          <th>Mã lượt (ID)</th>
+                          <th>MSSV (Sinh viên)</th>
+                          <th>Thời gian bắt đầu</th>
+                          <th>Điểm số</th>
+                          <th>Hành động Quản lý</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {allEntries.map((entry) => (
+                          <tr key={entry.entry_id}>
+                            <td><strong>#{entry.entry_id}</strong></td>
+                            <td><strong>{entry.student_id}</strong></td>
+                            <td>{formatDate(entry.entry_start_time)}</td>
+                            <td>
+                              {entry.entry_score !== null && entry.entry_score !== undefined ? (
+                                <span className="badge-score-submitted">{formatScore(entry.entry_score)}</span>
+                              ) : (
+                                <span className="badge-score-pending">Đang làm dở</span>
+                              )}
+                            </td>
+                            <td>
+                              <div style={{ display: 'flex', gap: '8px' }}>
+                                <button className="quiz-btn-action" onClick={() => handleReviewAttempt(entry)}>
+                                  👁️ Xem bài & Chấm
+                                </button>
+                                <button 
+                                  className="quiz-btn-action" 
+                                  style={{ background: '#fee2e2', color: '#dc2626', border: '1px solid #fca5a5' }}
+                                  onClick={() => handleDeleteEntry(entry.entry_id)}
+                                >
+                                  🗑️ Xóa lượt này (Cho làm lại)
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  )}
+                </div>
+              )}
+
+              {/* Bảng lịch sử các lượt làm bài CÁ NHÂN */}
               <div className="quiz-history-section">
-                <h3>Lịch sử thi của bạn</h3>
+                <h3>Lịch sử thi cá nhân của bạn</h3>
                 {pastEntries.length === 0 ? (
                   <p style={{ color: "#777", fontStyle: "italic" }}>Bạn chưa thực hiện lượt làm bài nào.</p>
                 ) : (
@@ -524,14 +858,14 @@ function QuizPage() {
                           <td>{idx + 1}</td>
                           <td>{formatDate(entry.entry_start_time)}</td>
                           <td>
-                            {entry.entry_score !== null ? (
+                            {entry.entry_score !== null && entry.entry_score !== undefined ? (
                               <span className="badge-score-submitted">{formatScore(entry.entry_score)}</span>
                             ) : (
                               <span className="badge-score-pending">Đang làm dở</span>
                             )}
                           </td>
                           <td>
-                            {entry.entry_score !== null ? (
+                            {entry.entry_score !== null && entry.entry_score !== undefined ? (
                               <button className="quiz-btn-action" onClick={() => handleReviewAttempt(entry)}>
                                 Xem lại bài làm
                               </button>
@@ -560,7 +894,7 @@ function QuizPage() {
                   </button>
                 ) : canAttempt ? (
                   <button className="quiz-btn quiz-btn-primary" onClick={handleStartNewAttempt}>
-                    🚀 Bắt đầu làm bài mới
+                    🚀 Bắt đầu làm bài mới ({quizData?.time_limit || 30} phút)
                   </button>
                 ) : (
                   <button className="quiz-btn quiz-btn-primary" disabled>
@@ -576,9 +910,11 @@ function QuizPage() {
   }
 
   // 5. Hiển thị Màn hình làm bài (Active Quiz View)
+  const isTimeWarning = remainingSeconds !== null && remainingSeconds <= 300;
+  const isTimeUrgent = remainingSeconds !== null && remainingSeconds <= 60;
+
   return (
     <div className="quiz-container">
-      {/* NAVBAR */}
       <Header view="courses" />
 
       {/* Quiz content */}
@@ -586,6 +922,40 @@ function QuizPage() {
         <div className="quiz-body">
           {/* KHỐI TRÁI: KHU VỰC ĐỌC ĐỀ VÀ TRẢ LỜI CÂU HỎI */}
           <div className="quiz-left-content">
+            {/* STICKY COUNTDOWN TIMER BANNER */}
+            <div style={{
+              background: isTimeUrgent ? '#fff5f5' : isTimeWarning ? '#fffaf0' : '#f0fff4',
+              border: `1.5px solid ${isTimeUrgent ? '#feb2b2' : isTimeWarning ? '#fbd38d' : '#9ae6b4'}`,
+              borderRadius: '10px',
+              padding: '12px 20px',
+              marginBottom: '20px',
+              display: 'flex',
+              justify: 'space-between',
+              alignItems: 'center',
+              boxShadow: '0 2px 10px rgba(0,0,0,0.05)'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{ fontSize: '20px' }}>{isTimeUrgent ? '⚠️' : '⏱️'}</span>
+                <span style={{ fontSize: '15px', fontWeight: 'bold', color: isTimeUrgent ? '#c53030' : isTimeWarning ? '#c05621' : '#22543d' }}>
+                  {isTimeUrgent ? 'Sắp hết giờ!' : 'Thời gian làm bài còn lại:'}
+                </span>
+              </div>
+
+              <div style={{
+                fontSize: '24px',
+                fontWeight: '900',
+                fontFamily: 'monospace',
+                letterSpacing: '1px',
+                color: isTimeUrgent ? '#e53e3e' : isTimeWarning ? '#dd6b20' : '#2b6cb0',
+                padding: '4px 14px',
+                background: '#fff',
+                borderRadius: '6px',
+                border: '1px solid #cbd5e0'
+              }}>
+                {formatTimerString(remainingSeconds)}
+              </div>
+            </div>
+
             <div className="quiz-course-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <div>
                 {quizData?.title || "Quiz"}

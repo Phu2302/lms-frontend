@@ -6,6 +6,7 @@ Frontend cho hệ thống LMS/TNTT.
 
 ```text
 lms-frontend
+.
 ├── README.md
 ├── index.html
 ├── package-lock.json
@@ -40,7 +41,10 @@ lms-frontend
 │   │   │       └── requests.js
 │   │   ├── auth
 │   │   │   └── auth.js
-│   │   └── axios.js
+│   │   ├── axios.js
+│   │   └── teacher
+│   │       ├── announcements.js
+│   │       └── grades.js
 │   ├── components
 │   │   └── Header
 │   │       └── Header.jsx
@@ -55,11 +59,22 @@ lms-frontend
 │       │   └── HomePage.jsx
 │       ├── LMS
 │       │   ├── CourseDetail
+│       │   │   ├── AddForum
+│       │   │   │   ├── AddForum.css
+│       │   │   │   └── AddForum.jsx
+│       │   │   ├── AddMaterial
+│       │   │   │   ├── AddMaterial.css
+│       │   │   │   └── AddMaterial.jsx
+│       │   │   ├── AddQuiz
+│       │   │   │   ├── AddQuiz.css
+│       │   │   │   └── AddQuiz.jsx
 │       │   │   ├── AssignmentDetail
 │       │   │   │   ├── AssignmentDetail.css
 │       │   │   │   └── AssignmentDetail.jsx
 │       │   │   ├── CourseDetail.css
 │       │   │   ├── CourseDetail.jsx
+│       │   │   ├── EditQuiz
+│       │   │   │   └── EditQuiz.jsx
 │       │   │   ├── ForumPage
 │       │   │   │   ├── ForumPage.css
 │       │   │   │   └── ForumPage.jsx
