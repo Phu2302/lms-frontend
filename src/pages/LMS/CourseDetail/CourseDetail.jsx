@@ -6,7 +6,8 @@ import { createQuizAPI, deleteQuizAPI } from '../../../api/LMS/CourseDetail/quiz
 import { createForumAPI, deleteForumAPI } from '../../../api/LMS/CourseDetail/forums';
 import { createMaterialAPI, updateMaterialAPI, deleteMaterialAPI } from '../../../api/LMS/CourseDetail/materials';
 import { getClassAnnouncementsAPI, createAnnouncementAPI, deleteAnnouncementAPI } from '../../../api/teacher/announcements';
-import { getClassGradesAPI, saveBatchGradesAPI, getStudentGradeAPI } from '../../../api/teacher/grades';
+import { getClassGradesAPI, saveBatchGradesAPI, getStudentGradeAPI, publishGradesAPI } from '../../../api/teacher/grades';
+import { getAllQuizEntriesAPI } from '../../../api/LMS/CourseDetail/quizEntries';
 import Header from '../../../components/Header/Header';
 import './CourseDetail.css';
 
@@ -33,6 +34,15 @@ function CourseDetail() {
   const [classGrades, setClassGrades] = useState([]);
   const [studentOwnGrade, setStudentOwnGrade] = useState(null);
   const [isSavingGrades, setIsSavingGrades] = useState(false);
+  const [isGradesPublished, setIsGradesPublished] = useState(false);
+  const [selectedQuizStudent, setSelectedQuizStudent] = useState(null);
+  const [studentQuizDetails, setStudentQuizDetails] = useState({});
+
+  // Cấu hình tỷ lệ phần trăm (Trọng số)
+  const [quizWeight, setQuizWeight] = useState(10);
+  const [assignmentWeight, setAssignmentWeight] = useState(20);
+  const [midtermWeight, setMidtermWeight] = useState(30);
+  const [finalWeight, setFinalWeight] = useState(40);
 
   // State quản lý trạng thái đóng/mở của các Accordion
   const [openSections, setOpenSections] = useState([]);
@@ -149,7 +159,62 @@ function CourseDetail() {
     try {
       if (hasEditingPrivileges) {
         const res = await getClassGradesAPI(courseId);
-        setClassGrades(res.data || []);
+        let grades = res.data || [];
+
+        // Lấy tất cả bài quiz của lớp
+        const chapterList = classData?.chapters || classData?.Chapters || [];
+        const quizzes = classData?.quizzes || classData?.Quizzes || [];
+        const quizList = [];
+        chapterList.forEach(chapter => {
+          quizzes.filter(q => Number(q.chapter_id) === Number(chapter.chapter_id)).forEach(q => quizList.push(q));
+        });
+
+        // Lấy entry của tất cả quiz
+        const quizDetailsMap = {}; // map student_id -> array of { title, max_score, achieved_score, entry_start_time }
+        let totalQuizMaxScore = 0;
+
+        await Promise.all(quizList.map(async (q) => {
+          try {
+            const entryRes = await getAllQuizEntriesAPI(q.quiz_id);
+            const entries = entryRes.data || [];
+            totalQuizMaxScore += Number(q.total_score || 0);
+
+            entries.forEach(entry => {
+              const sid = entry.student_id;
+              if (!quizDetailsMap[sid]) quizDetailsMap[sid] = [];
+              quizDetailsMap[sid].push({
+                quiz_id: q.quiz_id,
+                title: q.title,
+                max_score: Number(q.total_score || 0),
+                achieved_score: Number(entry.entry_score || 0),
+                entry_start_time: entry.entry_start_time
+              });
+            });
+          } catch (e) {
+            console.warn(`Lỗi tải entries cho quiz ${q.quiz_id}`);
+          }
+        }));
+
+        setStudentQuizDetails(quizDetailsMap);
+
+        // Tính điểm quiz tự động cho từng sinh viên
+        grades = grades.map(g => {
+          const sid = g.student_id;
+          const details = quizDetailsMap[sid] || [];
+          let achievedSum = 0;
+          details.forEach(d => achievedSum += d.achieved_score);
+          
+          let autoQuizGrade = 0;
+          if (totalQuizMaxScore > 0) {
+             autoQuizGrade = (achievedSum / totalQuizMaxScore) * 10;
+          }
+          return {
+            ...g,
+            quiz_grade: g.quiz_grade != null && g.quiz_grade !== '' ? g.quiz_grade : Number(autoQuizGrade.toFixed(2))
+          };
+        });
+
+        setClassGrades(grades);
       } else {
         const res = await getStudentGradeAPI(courseId);
         setStudentOwnGrade(res.data || null);
@@ -338,9 +403,26 @@ function CourseDetail() {
   const handleSaveBatchGrades = async () => {
     setIsSavingGrades(true);
     try {
+      const gradesToSave = classGrades.map(g => {
+        const computedTotal = (
+          (Number(g.quiz_grade || 0) * quizWeight) +
+          (Number(g.assignment_grade || 0) * assignmentWeight) +
+          (Number(g.midterm_grade || 0) * midtermWeight) +
+          (Number(g.final_grade || 0) * finalWeight)
+        ) / 100;
+        return {
+          ...g,
+          total_grade: Number(computedTotal.toFixed(2)),
+          percentage_1: quizWeight,
+          percentage_2: assignmentWeight,
+          percentage_3: midtermWeight,
+          percentage_4: finalWeight
+        };
+      });
+
       await saveBatchGradesAPI({
         class_id: Number(courseId),
-        grades: classGrades
+        grades: gradesToSave
       });
       alert('Đã lưu bảng điểm thành công!');
       fetchGradesData();
@@ -384,6 +466,30 @@ function CourseDetail() {
 
   // Lấy tên class để hiển thị
   const className = classData?.class?.course_name || classData?.class_name || classData?.course_name || `Lớp học ${courseId}`;
+
+  const handleTogglePublishGrades = async () => {
+    try {
+      const newStatus = !isGradesPublished;
+      await publishGradesAPI(courseId, newStatus);
+      setIsGradesPublished(newStatus);
+      alert(newStatus ? 'Đã công bố điểm cho sinh viên.' : 'Đã ẩn điểm với sinh viên.');
+    } catch (err) {
+      alert('Chưa cấu hình API ẩn/hiện điểm (Backend). Vui lòng cấu hình API PUT /classes/:id/publish-grades');
+    }
+  };
+
+  const openQuizModal = (studentId, userName) => {
+    setSelectedQuizStudent({ id: studentId, name: userName });
+  };
+
+  const closeQuizModal = () => {
+    setSelectedQuizStudent(null);
+  };
+
+  const handleRowClick = (e, g) => {
+    if (e.target.tagName.toLowerCase() === 'input') return; // Không mở modal khi đang gõ điểm
+    openQuizModal(g.student_id, g.user_name);
+  };
 
   return (
     <div className="course-detail-container">
@@ -669,13 +775,24 @@ function CourseDetail() {
                   <div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
                       <h3 style={{ margin: 0 }}>📊 Bảng điểm sinh viên lớp {courseId}</h3>
-                      <button 
-                        onClick={handleSaveBatchGrades}
-                        disabled={isSavingGrades}
-                        style={{ background: '#008b44', color: '#fff', border: 'none', padding: '8px 18px', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer' }}
-                      >
-                        {isSavingGrades ? 'Đang lưu...' : '💾 Lưu bảng điểm'}
-                      </button>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+                        <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer', fontSize: '14px', fontWeight: 'bold' }}>
+                          <input 
+                            type="checkbox" 
+                            checked={isGradesPublished} 
+                            onChange={handleTogglePublishGrades}
+                            style={{ marginRight: '8px', transform: 'scale(1.2)' }}
+                          />
+                          Công bố điểm
+                        </label>
+                        <button 
+                          onClick={handleSaveBatchGrades}
+                          disabled={isSavingGrades}
+                          style={{ background: '#008b44', color: '#fff', border: 'none', padding: '8px 18px', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer' }}
+                        >
+                          {isSavingGrades ? 'Đang lưu...' : '💾 Lưu bảng điểm'}
+                        </button>
+                      </div>
                     </div>
 
                     <div style={{ overflowX: 'auto' }}>
@@ -685,63 +802,76 @@ function CourseDetail() {
                             <th>#</th>
                             <th>MSSV</th>
                             <th>Tên Sinh viên</th>
-                            <th>Quiz (10%)</th>
-                            <th>Bài tập (20%)</th>
-                            <th>Giữa kỳ (30%)</th>
-                            <th>Cuối kỳ (40%)</th>
+                            <th>Quiz (<input type="number" style={{width: '35px', background: 'transparent', border: '1px solid #ccc', borderRadius: '4px', textAlign: 'center', fontWeight: 'bold'}} value={quizWeight} onChange={e => setQuizWeight(Number(e.target.value))}/>%)</th>
+                            <th>Bài tập (<input type="number" style={{width: '35px', background: 'transparent', border: '1px solid #ccc', borderRadius: '4px', textAlign: 'center', fontWeight: 'bold'}} value={assignmentWeight} onChange={e => setAssignmentWeight(Number(e.target.value))}/>%)</th>
+                            <th>Giữa kỳ (<input type="number" style={{width: '35px', background: 'transparent', border: '1px solid #ccc', borderRadius: '4px', textAlign: 'center', fontWeight: 'bold'}} value={midtermWeight} onChange={e => setMidtermWeight(Number(e.target.value))}/>%)</th>
+                            <th>Cuối kỳ (<input type="number" style={{width: '35px', background: 'transparent', border: '1px solid #ccc', borderRadius: '4px', textAlign: 'center', fontWeight: 'bold'}} value={finalWeight} onChange={e => setFinalWeight(Number(e.target.value))}/>%)</th>
                             <th>Tổng kết</th>
                           </tr>
                         </thead>
                         <tbody>
                           {classGrades.length > 0 ? (
-                            classGrades.map((g, idx) => (
-                              <tr key={g.student_id}>
-                                <td>{idx + 1}</td>
-                                <td><strong>{g.student_id}</strong></td>
-                                <td>{g.user_name || 'N/A'}</td>
-                                <td>
-                                  <input 
-                                    type="number" 
-                                    step="0.1" min="0" max="10" 
-                                    style={{ width: '70px', padding: '4px', textAlign: 'center' }}
-                                    value={g.quiz_grade ?? ''} 
-                                    onChange={(e) => handleGradeChange(g.student_id, 'quiz_grade', e.target.value)}
-                                  />
-                                </td>
-                                <td>
-                                  <input 
-                                    type="number" 
-                                    step="0.1" min="0" max="10" 
-                                    style={{ width: '70px', padding: '4px', textAlign: 'center' }}
-                                    value={g.assignment_grade ?? ''} 
-                                    onChange={(e) => handleGradeChange(g.student_id, 'assignment_grade', e.target.value)}
-                                  />
-                                </td>
-                                <td>
-                                  <input 
-                                    type="number" 
-                                    step="0.1" min="0" max="10" 
-                                    style={{ width: '70px', padding: '4px', textAlign: 'center' }}
-                                    value={g.midterm_grade ?? ''} 
-                                    onChange={(e) => handleGradeChange(g.student_id, 'midterm_grade', e.target.value)}
-                                  />
-                                </td>
-                                <td>
-                                  <input 
-                                    type="number" 
-                                    step="0.1" min="0" max="10" 
-                                    style={{ width: '70px', padding: '4px', textAlign: 'center' }}
-                                    value={g.final_grade ?? ''} 
-                                    onChange={(e) => handleGradeChange(g.student_id, 'final_grade', e.target.value)}
-                                  />
-                                </td>
-                                <td>
-                                  <strong style={{ color: (g.total_grade ?? 0) >= 5.0 ? '#008b44' : '#e53e3e' }}>
-                                    {g.total_grade != null ? Number(g.total_grade).toFixed(2) : '--'}
-                                  </strong>
-                                </td>
-                              </tr>
-                            ))
+                            classGrades.map((g, idx) => {
+                              const computedTotal = (
+                                (Number(g.quiz_grade || 0) * quizWeight) +
+                                (Number(g.assignment_grade || 0) * assignmentWeight) +
+                                (Number(g.midterm_grade || 0) * midtermWeight) +
+                                (Number(g.final_grade || 0) * finalWeight)
+                              ) / 100;
+                              return (
+                                <tr 
+                                  key={g.student_id} 
+                                  onClick={(e) => handleRowClick(e, g)}
+                                  style={{ cursor: 'pointer' }}
+                                  title="Nhấn vào để xem chi tiết Quiz"
+                                >
+                                  <td>{idx + 1}</td>
+                                  <td><strong>{g.student_id}</strong></td>
+                                  <td>{g.user_name || 'N/A'}</td>
+                                  <td>
+                                    <input 
+                                      type="number" 
+                                      step="0.1" min="0" max="10" 
+                                      style={{ width: '70px', padding: '4px', textAlign: 'center' }}
+                                      value={g.quiz_grade ?? ''} 
+                                      onChange={(e) => handleGradeChange(g.student_id, 'quiz_grade', e.target.value)}
+                                    />
+                                  </td>
+                                  <td>
+                                    <input 
+                                      type="number" 
+                                      step="0.1" min="0" max="10" 
+                                      style={{ width: '70px', padding: '4px', textAlign: 'center' }}
+                                      value={g.assignment_grade ?? ''} 
+                                      onChange={(e) => handleGradeChange(g.student_id, 'assignment_grade', e.target.value)}
+                                    />
+                                  </td>
+                                  <td>
+                                    <input 
+                                      type="number" 
+                                      step="0.1" min="0" max="10" 
+                                      style={{ width: '70px', padding: '4px', textAlign: 'center' }}
+                                      value={g.midterm_grade ?? ''} 
+                                      onChange={(e) => handleGradeChange(g.student_id, 'midterm_grade', e.target.value)}
+                                    />
+                                  </td>
+                                  <td>
+                                    <input 
+                                      type="number" 
+                                      step="0.1" min="0" max="10" 
+                                      style={{ width: '70px', padding: '4px', textAlign: 'center' }}
+                                      value={g.final_grade ?? ''} 
+                                      onChange={(e) => handleGradeChange(g.student_id, 'final_grade', e.target.value)}
+                                    />
+                                  </td>
+                                  <td>
+                                    <strong style={{ color: computedTotal >= 5.0 ? '#008b44' : '#e53e3e' }}>
+                                      {computedTotal.toFixed(2)}
+                                    </strong>
+                                  </td>
+                                </tr>
+                              );
+                            })
                           ) : (
                             <tr>
                               <td colSpan="8" style={{ textAlign: 'center', padding: '20px', color: '#718096' }}>Chưa có sinh viên nào đăng ký lớp học này.</td>
@@ -1054,6 +1184,46 @@ function CourseDetail() {
           </div>
         </div>
       )}
+      {/* MODAL XEM CHI TIẾT QUIZ (Popup) */}
+      {selectedQuizStudent && (
+        <div className="modal-overlay">
+          <div className="modal-content" style={{ maxWidth: '600px', width: '90%' }}>
+            <h2>Chi tiết điểm Quiz của sinh viên: {selectedQuizStudent.name} ({selectedQuizStudent.id})</h2>
+            
+            <div style={{ marginTop: '20px', marginBottom: '20px' }}>
+              {studentQuizDetails[selectedQuizStudent.id] && studentQuizDetails[selectedQuizStudent.id].length > 0 ? (
+                <table className="student-data-table">
+                  <thead>
+                    <tr>
+                      <th>Tên Quiz</th>
+                      <th>Điểm đạt được</th>
+                      <th>Tổng điểm (Quiz)</th>
+                      <th>Thời gian nộp</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {studentQuizDetails[selectedQuizStudent.id].map((detail, idx) => (
+                      <tr key={idx}>
+                        <td>{detail.title}</td>
+                        <td style={{ fontWeight: 'bold' }}>{detail.achieved_score}</td>
+                        <td>{detail.max_score}</td>
+                        <td>{detail.entry_start_time ? new Date(detail.entry_start_time).toLocaleString() : 'N/A'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              ) : (
+                <div style={{ fontStyle: 'italic', color: '#718096', textAlign: 'center' }}>Sinh viên này chưa làm bài quiz nào.</div>
+              )}
+            </div>
+            
+            <div className="modal-actions" style={{ display: 'flex', justifyContent: 'flex-end' }}>
+              <button onClick={closeQuizModal} style={{ padding: '8px 16px', cursor: 'pointer', borderRadius: '4px', border: '1px solid #ccc', background: '#fff' }}>Đóng</button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }

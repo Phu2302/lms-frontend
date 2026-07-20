@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { getUserProfileAPI } from '../../api/StudentInfo/Profile/users';
+import { logoutAPI } from '../../api/auth/auth';
 import ExamSchedule from './ExamSchedule/ExamSchedule';
 import ServiceStudent from './ServiceStudent/ServiceStudent';
 import Scoreboard from './Scoreboard/Scoreboard';
@@ -12,6 +13,17 @@ function StudentInfo() {
 
   // Tab con hoạt động: 'info', 'exam' hoặc 'service'
   const [activeSubTab, setActiveSubTab] = useState(location.state?.defaultTab || 'info');
+
+  const handleLogout = async () => {
+    try {
+      await logoutAPI();
+    } catch (err) {
+      console.warn('Logout API error:', err);
+    }
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    navigate('/login');
+  };
 
   // Dữ liệu sinh viên từ API
   const [studentData, setStudentData] = useState(null);
@@ -61,6 +73,9 @@ function StudentInfo() {
           >
             Lịch thi
           </button>
+        </div>
+        <div className="nav-logout-wrapper" style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', paddingRight: '20px' }}>
+          <button className="nav-logout-btn" onClick={handleLogout}>Đăng xuất</button>
         </div>
       </nav>
 

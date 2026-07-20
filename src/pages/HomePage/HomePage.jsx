@@ -21,8 +21,16 @@ function HomePage() {
         navigate('/course-registration');
         return;
       }
+      if (serviceName === 'Quản lý giảng dạy') {
+        navigate('/teaching-support');
+        return;
+      }
       if (serviceName === 'LMS') {
         navigate('/lms');
+        return;
+      }
+      if (serviceName === 'Nhập điểm trực tuyến') {
+        navigate('/online-grading');
         return;
       }
     }
@@ -54,7 +62,7 @@ function HomePage() {
         <div className="mybk-column">
           <h2>Giảng viên</h2>
           <button className="service-btn" onClick={() => handleServiceClick('Quản lý giảng dạy')}>
-            🛠️ Quản lý giảng dạy
+            🛠️ Hỗ trợ & Quản lý giảng dạy
           </button>
           <button className="service-btn" onClick={() => handleServiceClick('Nhập điểm trực tuyến')}>
             📝 Nhập điểm trực tuyến

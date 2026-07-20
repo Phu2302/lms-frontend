@@ -4,10 +4,22 @@ import { getSemestersAPI } from '../../api/LMS/Schedule/semesters';
 import { getUserClassesAPI } from '../../api/StudentInfo/Profile/users';
 import { getAllClassesAPI, enrollClassAPI, unenrollClassAPI } from '../../api/CourseRegistration/classes';
 import { getAllCoursesAPI } from '../../api/CourseRegistration/courses';
+import { logoutAPI } from '../../api/auth/auth';
 import './CourseRegistration.css';
 
 function CourseRegistration() {
   const navigate = useNavigate();
+
+  const handleLogout = async () => {
+    try {
+      await logoutAPI();
+    } catch (err) {
+      console.warn('Logout API error:', err);
+    }
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    navigate('/login');
+  };
 
   // State quản lý xem đang ở màn hình danh sách đợt hay chi tiết 1 đợt
   const [activePeriod, setActivePeriod] = useState(null);
@@ -177,6 +189,9 @@ function CourseRegistration() {
             myBH
           </div>
           <div className="cr-nav-title">Đăng ký môn học</div>
+          <div className="cr-logout-wrapper" style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center' }}>
+            <button className="nav-logout-btn" onClick={handleLogout}>Đăng xuất</button>
+          </div>
         </nav>
         <div className="cr-main-content">
           {error && <div className="cr-error-banner">{error}</div>}
@@ -226,16 +241,19 @@ function CourseRegistration() {
   return (
     <div className="cr-layout">
       {/* Header màu xanh của đợt */}
-      <div className="cr-period-header">
-        <button className="cr-back-btn" onClick={() => {
-          setActivePeriod(null);
-          setSearchResults([]);
-          setSearchQuery('');
-          setSearchMessage('Nhập mã hoặc tên môn học để tìm kiếm lớp đăng ký.');
-        }}>🔙 Trở về</button>
-        <span className="cr-period-title">
-          ĐĂNG KÝ/ HIỆU CHỈNH ({activePeriod.id}) {activePeriod.name}
-        </span>
+      <div className="cr-period-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div>
+          <button className="cr-back-btn" onClick={() => {
+            setActivePeriod(null);
+            setSearchResults([]);
+            setSearchQuery('');
+            setSearchMessage('Nhập mã hoặc tên môn học để tìm kiếm lớp đăng ký.');
+          }}>🔙 Trở về</button>
+          <span className="cr-period-title" style={{ marginLeft: '15px' }}>
+            ĐĂNG KÝ/ HIỆU CHỈNH ({activePeriod.id}) {activePeriod.name}
+          </span>
+        </div>
+        <button className="nav-logout-btn" onClick={handleLogout}>Đăng xuất</button>
       </div>
 
       <div className="cr-main-content">

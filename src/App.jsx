@@ -13,6 +13,8 @@ import ForumPage from './pages/LMS/CourseDetail/ForumPage/ForumPage';
 import ForumPostDetailPage from './pages/LMS/CourseDetail/ForumPostDetailPage/ForumPostDetailPage';
 import CalendarPage from './pages/LMS/Schedule/CalendarPage';
 import CourseRegistration from './pages/CourseRegistration/CourseRegistration';
+import OnlineGrading from './pages/OnlineGrading/OnlineGrading';
+import TeachingSupport from './pages/TeachingSupport/TeachingSupport';
 
 import AddQuiz from './pages/LMS/CourseDetail/AddQuiz/AddQuiz';
 import EditQuiz from './pages/LMS/CourseDetail/EditQuiz/EditQuiz';
@@ -36,6 +38,8 @@ function App() {
         <Route path="/lms/course/:courseId/forum-post/:postId" element={<ForumPostDetailPage />} />
         <Route path="/lms/calendar" element={<CalendarPage />} />
         <Route path="/course-registration" element={<CourseRegistration />} />
+        <Route path="/online-grading" element={<OnlineGrading />} />
+        <Route path="/teaching-support" element={<TeachingSupport />} />
 
         {/* Dedicated pages for adding/editing Quiz, Material, Forum */}
         <Route path="/lms/course/:courseId/chapter/:chapterId/add-quiz" element={<AddQuiz />} />

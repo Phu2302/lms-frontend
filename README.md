@@ -6,7 +6,6 @@ Frontend cho hệ thống LMS/TNTT.
 
 ```text
 lms-frontend
-.
 ├── README.md
 ├── index.html
 ├── package-lock.json
@@ -44,7 +43,9 @@ lms-frontend
 │   │   ├── axios.js
 │   │   └── teacher
 │   │       ├── announcements.js
-│   │       └── grades.js
+│   │       ├── grades.js
+│   │       ├── onlineGrades.js
+│   │       └── support.js
 │   ├── components
 │   │   └── Header
 │   │       └── Header.jsx
@@ -94,21 +95,27 @@ lms-frontend
 │       ├── LoginPage
 │       │   ├── LoginPage.css
 │       │   └── LoginPage.jsx
-│       └── StudentInfo
-│           ├── ExamSchedule
-│           │   ├── ExamSchedule.css
-│           │   └── ExamSchedule.jsx
-│           ├── Scoreboard
-│           │   ├── Scoreboard.css
-│           │   └── Scoreboard.jsx
-│           ├── ServiceStudent
-│           │   ├── ServiceStudent.css
-│           │   └── ServiceStudent.jsx
-│           ├── StudentInfo.css
-│           ├── StudentInfo.jsx
-│           └── Timetable
-│               ├── Timetable.css
-│               └── Timetable.jsx
+│       ├── OnlineGrading
+│       │   ├── OnlineGrading.css
+│       │   └── OnlineGrading.jsx
+│       ├── StudentInfo
+│       │   ├── ExamSchedule
+│       │   │   ├── ExamSchedule.css
+│       │   │   └── ExamSchedule.jsx
+│       │   ├── Scoreboard
+│       │   │   ├── Scoreboard.css
+│       │   │   └── Scoreboard.jsx
+│       │   ├── ServiceStudent
+│       │   │   ├── ServiceStudent.css
+│       │   │   └── ServiceStudent.jsx
+│       │   ├── StudentInfo.css
+│       │   ├── StudentInfo.jsx
+│       │   └── Timetable
+│       │       ├── Timetable.css
+│       │       └── Timetable.jsx
+│       └── TeachingSupport
+│           ├── TeachingSupport.css
+│           └── TeachingSupport.jsx
 └── vite.config.js
 ```
 

@@ -1,0 +1,174 @@
+.online-grading-container {
+  min-height: 100vh;
+  background-color: #f7fafc;
+  font-family: 'Inter', sans-serif;
+}
+
+.online-grading-body {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 30px 20px;
+}
+
+.back-btn {
+  background: #fff;
+  border: 1px solid #cbd5e0;
+  padding: 8px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 500;
+  color: #4a5568;
+  margin-bottom: 20px;
+  transition: all 0.2s;
+}
+.back-btn:hover {
+  background: #edf2f7;
+}
+
+.subtitle {
+  color: #718096;
+  margin-bottom: 30px;
+  font-size: 16px;
+}
+
+.classes-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 20px;
+}
+
+.class-card {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.class-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  border-color: #3182ce;
+}
+
+.class-card h3 {
+  margin: 0 0 10px 0;
+  color: #2d3748;
+  font-size: 18px;
+}
+
+.class-card p {
+  color: #718096;
+  margin: 0 0 15px 0;
+  font-size: 14px;
+}
+
+.select-class-btn {
+  width: 100%;
+  padding: 10px;
+  background: #ebf8ff;
+  color: #3182ce;
+  border: none;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.select-class-btn:hover {
+  background: #bee3f8;
+}
+
+.grading-panel {
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+  padding: 20px;
+}
+
+.panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  padding-bottom: 15px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.panel-header h2 {
+  margin: 0;
+  color: #2d3748;
+  font-size: 20px;
+}
+
+.panel-actions {
+  display: flex;
+  gap: 15px;
+}
+
+.back-btn-small {
+  background: #edf2f7;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 500;
+  color: #4a5568;
+}
+
+.save-grades-btn {
+  background: #008b44;
+  color: #fff;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.save-grades-btn:hover {
+  background: #007036;
+}
+.save-grades-btn:disabled {
+  background: #9ae6b4;
+  cursor: not-allowed;
+}
+
+.table-responsive {
+  overflow-x: auto;
+}
+
+.grading-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.grading-table th, .grading-table td {
+  padding: 12px 15px;
+  text-align: left;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.grading-table th {
+  background: #f7fafc;
+  color: #4a5568;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.grading-table td input[type="number"],
+.grading-table td input[type="text"] {
+  width: 70px;
+  padding: 6px;
+  border: 1px solid #cbd5e0;
+  border-radius: 4px;
+  text-align: center;
+}
+
+.grading-table td input[type="number"]:focus,
+.grading-table td input[type="text"]:focus {
+  outline: none;
+  border-color: #3182ce;
+  box-shadow: 0 0 0 1px #3182ce;
+}
