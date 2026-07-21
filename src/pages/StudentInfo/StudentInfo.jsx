@@ -1,18 +1,45 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import { getUserProfileAPI } from '../../api/StudentInfo/Profile/users';
 import { logoutAPI } from '../../api/auth/auth';
 import ExamSchedule from './ExamSchedule/ExamSchedule';
 import ServiceStudent from './ServiceStudent/ServiceStudent';
 import Scoreboard from './Scoreboard/Scoreboard';
+import Timetable from './Timetable/Timetable';
+import { useToast } from '../../components/Toast/ToastContext';
 import './StudentInfo.css';
 
 function StudentInfo() {
   const navigate = useNavigate();
   const location = useLocation();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const { showToast } = useToast();
 
-  // Tab con hoạt động: 'info', 'exam' hoặc 'service'
-  const [activeSubTab, setActiveSubTab] = useState(location.state?.defaultTab || 'info');
+  const initialTab = searchParams.get('tab') || location.state?.defaultTab || 'info';
+  const [activeSubTab, setActiveSubTab] = useState(initialTab);
+
+  useEffect(() => {
+    const titles = {
+      info: 'Thông tin sinh viên - BK LMS',
+      service: 'Đăng ký in giấy xác nhận - BK LMS',
+      exam: 'Lịch thi sinh viên - BK LMS',
+      scoreboard: 'Bảng điểm sinh viên - BK LMS',
+      schedule: 'Thời khóa biểu sinh viên - BK LMS'
+    };
+    document.title = titles[activeSubTab] || 'Thông tin sinh viên - BK LMS';
+  }, [activeSubTab]);
+
+  const handleSubTabChange = (tabName) => {
+    setActiveSubTab(tabName);
+    setSearchParams({ tab: tabName }, { replace: true });
+  };
+
+  useEffect(() => {
+    const tabFromUrl = searchParams.get('tab');
+    if (tabFromUrl && tabFromUrl !== activeSubTab) {
+      setActiveSubTab(tabFromUrl);
+    }
+  }, [searchParams]);
 
   const handleLogout = async () => {
     try {
@@ -30,10 +57,20 @@ function StudentInfo() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  // Gọi API lấy profile khi component mount
+  // Gọi API lấy profile khi component mount & Kiểm tra phân quyền
   useEffect(() => {
+    const userString = localStorage.getItem('user');
+    const currentUser = userString ? JSON.parse(userString) : null;
+    const userRole = String(currentUser?.role || '1');
+
+    if (userRole === '2' || userRole === '3') {
+      showToast('Trang "Thông tin sinh viên" chỉ dành riêng cho Sinh viên. Giảng viên và Admin không được phép truy cập!', 'error');
+      navigate(userRole === '2' ? '/online-grading' : '/lms', { replace: true });
+      return;
+    }
+
     fetchProfile();
-  }, []);
+  }, [navigate]);
 
   const fetchProfile = async () => {
     setLoading(true);
@@ -60,18 +97,27 @@ function StudentInfo() {
         <div className="nav-tabs-wrapper">
           <button 
             className={`nav-tab-btn ${activeSubTab === 'info' ? 'active' : ''}`}
-            onClick={() => setActiveSubTab('info')}
+            onClick={() => handleSubTabChange('info')}
           >
             Thông tin sinh viên
           </button>
-          <button className="nav-tab-btn" onClick={() => navigate('/lms/schedule')}>
-            Thời khoá biểu
+          <button 
+            className={`nav-tab-btn ${activeSubTab === 'service' ? 'active' : ''}`}
+            onClick={() => handleSubTabChange('service')}
+          >
+            Đăng ký in giấy xác nhận
           </button>
           <button 
             className={`nav-tab-btn ${activeSubTab === 'exam' ? 'active' : ''}`}
-            onClick={() => setActiveSubTab('exam')}
+            onClick={() => handleSubTabChange('exam')}
           >
             Lịch thi
+          </button>
+          <button 
+            className={`nav-tab-btn ${activeSubTab === 'schedule' ? 'active' : ''}`} 
+            onClick={() => handleSubTabChange('schedule')}
+          >
+            Thời khoá biểu
           </button>
         </div>
         <div className="nav-logout-wrapper" style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', paddingRight: '20px' }}>
@@ -89,19 +135,25 @@ function StudentInfo() {
           <div className="sidebar-menu-list">
             <button 
               className={`sidebar-item-btn ${activeSubTab === 'info' || activeSubTab === 'exam' ? 'active' : ''}`}
-              onClick={() => setActiveSubTab('info')}
+              onClick={() => handleSubTabChange('info')}
             >
               ☰ Sinh viên
             </button>
             <button 
-              className={`sidebar-item-btn ${activeSubTab === 'service' ? 'active' : ''}`}
-              onClick={() => setActiveSubTab('service')}
+              className={`sidebar-item-btn ${activeSubTab === 'schedule' ? 'active' : ''}`}
+              onClick={() => handleSubTabChange('schedule')}
             >
-              ☰ Dịch vụ
+              ☰ Thời khóa biểu
+            </button>
+            <button 
+              className={`sidebar-item-btn ${activeSubTab === 'service' ? 'active' : ''}`}
+              onClick={() => handleSubTabChange('service')}
+            >
+              ☰ Dịch vụ (Giấy xác nhận)
             </button>
             <button 
               className={`sidebar-item-btn ${activeSubTab === 'scoreboard' ? 'active' : ''}`}
-              onClick={() => setActiveSubTab('scoreboard')}
+              onClick={() => handleSubTabChange('scoreboard')}
             >
               ☰ Bảng điểm
             </button>
@@ -161,7 +213,7 @@ function StudentInfo() {
 
                     <div className="info-field-item">
                       <span className="info-field-label">Tên</span>
-                      <span className="info-field-value">{studentData.first_name || studentData.ten || 'N/A'}</span>
+                      <span className="info-field-value">{studentData.first_name || studentData.ten || studentData.user_name || 'N/A'}</span>
                     </div>
 
                     <div className="info-field-item">
@@ -171,7 +223,7 @@ function StudentInfo() {
 
                     <div className="info-field-item">
                       <span className="info-field-label">Giới tính</span>
-                      <span className="info-field-value">{studentData.gender || studentData.gioiTinh || 'N/A'}</span>
+                      <span className="info-field-value">{studentData.gender || 'N/A'}</span>
                     </div>
 
                     {/* HÀNG 2 */}
@@ -192,12 +244,12 @@ function StudentInfo() {
 
                     <div className="info-field-item">
                       <span className="info-field-label">Quê quán</span>
-                      <span className="info-field-value">{studentData.hometown || studentData.queQuan || 'N/A'}</span>
+                      <span className="info-field-value">{studentData.address || studentData.hometown || studentData.queQuan || 'N/A'}</span>
                     </div>
 
                     <div className="info-field-item">
                       <span className="info-field-label">Trạng thái</span>
-                      <span className="style" style={{ color: '#008b44', fontWeight: 'bold' }}>
+                      <span className="info-field-value" style={{ color: '#008b44', fontWeight: 'bold' }}>
                         {studentData.status || 'Đang học'}
                       </span>
                     </div>
@@ -224,6 +276,8 @@ function StudentInfo() {
 
             </div>
           </div>
+          ) : activeSubTab === 'schedule' ? (
+            <Timetable />
           ) : activeSubTab === 'exam' ? (
             <ExamSchedule />
           ) : activeSubTab === 'service' ? (

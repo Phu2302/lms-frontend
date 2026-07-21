@@ -1,13 +1,19 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import Header from '../../components/Header/Header';
 import { getAdminAnnouncementsAPI, getTeacherTicketsAPI, createTeacherTicketAPI } from '../../api/teacher/support';
 import './TeachingSupport.css';
 
 function TeachingSupport() {
   const navigate = useNavigate();
-  const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
-  const [activeTab, setActiveTab] = useState('announcements'); // announcements, tickets, resources
+  const [searchParams, setSearchParams] = useSearchParams();
+  const initialTab = searchParams.get('tab') || 'announcements';
+  const [activeTab, setActiveTab] = useState(initialTab); // announcements, tickets, resources
+
+  const handleTabChange = (tabName) => {
+    setActiveTab(tabName);
+    setSearchParams({ tab: tabName }, { replace: true });
+  };
 
   // States
   const [announcements, setAnnouncements] = useState([]);
@@ -57,7 +63,7 @@ function TeachingSupport() {
   const handleSubmitTicket = async (e) => {
     e.preventDefault();
     if (!ticketContent.trim()) {
-      alert('Vui lòng nhập nội dung chi tiết.');
+      showToast('Vui lòng nhập nội dung chi tiết.', 'error');
       return;
     }
     
@@ -67,13 +73,13 @@ function TeachingSupport() {
         type: ticketType,
         content: ticketContent
       });
-      alert('Đã gửi yêu cầu thành công!');
+      showToast('Đã gửi yêu cầu thành công!', 'success');
       setShowNewTicketModal(false);
       setTicketContent('');
       fetchTickets();
     } catch (err) {
       console.warn('Lỗi tạo phiếu yêu cầu:', err);
-      alert('Hệ thống Backend chưa sẵn sàng (Chưa có API). Vui lòng cấu hình API POST /support/tickets.');
+      showToast('Hệ thống Backend chưa sẵn sàng (Chưa có API). Vui lòng cấu hình API POST /support/tickets.', 'error');
     } finally {
       setIsSubmitting(false);
     }
@@ -98,19 +104,19 @@ function TeachingSupport() {
           <div className="support-sidebar">
             <button 
               className={`sidebar-item ${activeTab === 'announcements' ? 'active' : ''}`}
-              onClick={() => setActiveTab('announcements')}
+              onClick={() => handleTabChange('announcements')}
             >
               📢 Thông báo từ P.ĐT
             </button>
             <button 
               className={`sidebar-item ${activeTab === 'tickets' ? 'active' : ''}`}
-              onClick={() => setActiveTab('tickets')}
+              onClick={() => handleTabChange('tickets')}
             >
               ✉️ Phiếu yêu cầu (Tickets)
             </button>
             <button 
               className={`sidebar-item ${activeTab === 'resources' ? 'active' : ''}`}
-              onClick={() => setActiveTab('resources')}
+              onClick={() => handleTabChange('resources')}
             >
               📁 Biểu mẫu & Tài liệu
             </button>

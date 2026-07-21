@@ -19,10 +19,14 @@ function LMS({ view }) { // Nhận biến view từ App.jsx gửi sang
   const [coursesData, setCoursesData] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
 
   // Lấy thông tin user từ localStorage
   const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
 
+  useEffect(() => {
+    document.title = view === 'courses' ? 'Các khóa học của tôi - BK LMS' : 'Trang chủ - BK LMS';
+  }, [view]);
 
   // Gọi API lấy danh sách classes khi vào tab Courses
   useEffect(() => {
@@ -30,6 +34,11 @@ function LMS({ view }) { // Nhận biến view từ App.jsx gửi sang
       fetchCourses();
     }
   }, [view]);
+
+  // Reset về trang 1 khi thay đổi từ khóa tìm kiếm
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery]);
 
   const fetchCourses = async () => {
     setLoading(true);
@@ -40,6 +49,7 @@ function LMS({ view }) { // Nhận biến view từ App.jsx gửi sang
       const classes = Array.isArray(res.data) ? res.data : [];
       setCoursesData(classes.map(cls => ({
         id: cls.class_id || cls.id,
+        code: cls.class_code || cls.course_code || '',
         title: cls.class_name || cls.course_name || `Lớp ${cls.class_id || cls.id}`,
         faculty: cls.faculty_name || cls.department || ''
       })));
@@ -51,18 +61,28 @@ function LMS({ view }) { // Nhận biến view từ App.jsx gửi sang
     }
   };
 
+  // Lọc dữ liệu theo từ khóa tìm kiếm
+  const filteredCourses = coursesData.filter(course => {
+    if (!searchQuery.trim()) return true;
+    const query = searchQuery.toLowerCase().trim();
+    return (
+      (course.title && course.title.toLowerCase().includes(query)) ||
+      (course.code && course.code.toLowerCase().includes(query)) ||
+      (course.faculty && course.faculty.toLowerCase().includes(query)) ||
+      String(course.id).toLowerCase().includes(query)
+    );
+  });
+
   // Chia mảng dữ liệu theo trang
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  const currentCourses = coursesData.slice(indexOfFirstItem, indexOfLastItem);
-  const totalPages = Math.ceil(coursesData.length / itemsPerPage);
+  const currentCourses = filteredCourses.slice(indexOfFirstItem, indexOfLastItem);
+  const totalPages = Math.ceil(filteredCourses.length / itemsPerPage) || 1;
 
   const handleCourseClick = (courseId) => {
     // Chuyển sang URL chi tiết của khóa học đó
     navigate(`/lms/course/${courseId}`);
   };
-
-
 
   return (
     <div className="lms-container">
@@ -89,7 +109,13 @@ function LMS({ view }) { // Nhận biến view từ App.jsx gửi sang
               <div className="courses-banner-header">Tổng quan về khóa học</div>
               
               <div className="courses-controls-row">
-                <input type="text" className="search-box-input" placeholder="Tìm kiếm môn học..." />
+                <input 
+                  type="text" 
+                  className="search-box-input" 
+                  placeholder="Tìm kiếm môn học theo tên, mã môn..." 
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
               </div>
 
               <h2 className="semester-section-title">• Học kỳ (Semester) 2/2025-2026</h2>
@@ -113,9 +139,9 @@ function LMS({ view }) { // Nhận biến view từ App.jsx gửi sang
               )}
 
               {/* Empty state */}
-              {!loading && !error && coursesData.length === 0 && (
+              {!loading && !error && filteredCourses.length === 0 && (
                 <div style={{ textAlign: 'center', padding: '40px', color: '#999' }}>
-                  📭 Bạn chưa được đăng ký vào lớp học nào.
+                  {searchQuery.trim() ? '🔍 Không tìm thấy môn học phù hợp với từ khóa.' : '📭 Bạn chưa được đăng ký vào lớp học nào.'}
                 </div>
               )}
 
@@ -145,7 +171,7 @@ function LMS({ view }) { // Nhận biến view từ App.jsx gửi sang
               })}
 
               {/* ĐIỀU KHIỂN CHUYỂN TRANG (Nội bộ trang, không đổi URL) */}
-              {coursesData.length > itemsPerPage && (
+              {filteredCourses.length > itemsPerPage && (
                 <div className="pagination-row">
                   <button 
                     className="page-btn" 

@@ -1,0 +1,140 @@
+/* GradeTab.css */
+
+.grade-tab-container {
+  background-color: #fff;
+  padding: 20px;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+}
+
+.grade-tab-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+}
+
+.grade-tab-title {
+  margin: 0;
+}
+
+.grade-tab-actions {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.publish-checkbox-label {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: bold;
+}
+
+.publish-checkbox {
+  margin-right: 8px;
+  transform: scale(1.2);
+}
+
+.save-grades-btn {
+  background: #008b44;
+  color: #fff;
+  border: none;
+  padding: 8px 18px;
+  border-radius: 6px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.save-grades-btn:hover {
+  background: #007237;
+}
+
+.table-responsive {
+  overflow-x: auto;
+}
+
+.weight-input {
+  width: 35px;
+  background: transparent;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  text-align: center;
+  font-weight: bold;
+}
+
+.clickable-row {
+  cursor: pointer;
+}
+
+.grade-input {
+  width: 70px;
+  padding: 4px;
+  text-align: center;
+}
+
+.note-input {
+  width: 120px;
+  padding: 4px;
+}
+
+.empty-table-cell {
+  text-align: center;
+  padding: 20px;
+  color: #718096;
+}
+
+.student-grades-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 15px;
+  margin-top: 15px;
+}
+
+.grade-card {
+  background: #f7fafc;
+  padding: 12px;
+  border-radius: 6px;
+  border: 1px solid #e2e8f0;
+  text-align: center;
+}
+
+.grade-card-label {
+  font-size: 12px;
+  color: #718096;
+}
+
+.grade-card-value {
+  font-size: 20px;
+  font-weight: bold;
+}
+
+.total-card {
+  background: #e6fffa;
+  border-color: #b2f5ea;
+}
+
+.total-label {
+  color: #234e52;
+  font-weight: bold;
+}
+
+.total-value {
+  color: #008b44;
+}
+
+.teacher-note-box {
+  margin-top: 15px;
+  background: #fffaf0;
+  padding: 12px;
+  border-radius: 6px;
+  border: 1px solid #feebc8;
+  color: #744210;
+}
+
+.no-grades-text {
+  margin-top: 10px;
+  color: #666;
+}

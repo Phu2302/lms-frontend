@@ -7,11 +7,13 @@ import {
   deleteForumPostAPI
 } from '../../../../api/LMS/CourseDetail/forumPosts';
 import Header from '../../../../components/Header/Header';
+import { useToast } from '../../../../components/Toast/ToastContext';
 import './ForumPostDetailPage.css';
 
 function ForumPostDetailPage() {
   const { courseId, postId } = useParams();
   const navigate = useNavigate();
+  const { showToast } = useToast();
   const [post, setPost] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -50,7 +52,7 @@ function ForumPostDetailPage() {
   const handleAddReply = async (e) => {
     e.preventDefault();
     if (!replyContent.trim()) {
-      alert('Vui lòng nhập nội dung phản hồi!');
+      showToast('Vui lòng nhập nội dung phản hồi!', 'error');
       return;
     }
 
@@ -60,12 +62,13 @@ function ForumPostDetailPage() {
         content: replyContent
       });
       setReplyContent('');
+      showToast('Đã đăng phản hồi thành công!', 'success');
       // Reload post details to see the new reply
       const res = await getForumPostDetailsAPI(postId);
       setPost(res.data);
     } catch (err) {
       console.error('Error creating reply:', err);
-      alert('Đã xảy ra lỗi khi đăng phản hồi. Vui lòng thử lại.');
+      showToast('Đã xảy ra lỗi khi đăng phản hồi. Vui lòng thử lại.', 'error');
     } finally {
       setSubmitting(false);
     }
@@ -81,9 +84,10 @@ function ForumPostDetailPage() {
         ...post,
         responses: post.responses.filter(r => r.response_id !== responseId)
       });
+      showToast('Đã xóa phản hồi.', 'info');
     } catch (err) {
       console.error('Error deleting reply:', err);
-      alert(err.response?.data?.error || 'Không thể xóa phản hồi này.');
+      showToast(err.response?.data?.error || 'Không thể xóa phản hồi này.', 'error');
     }
   };
 
@@ -95,11 +99,12 @@ function ForumPostDetailPage() {
     try {
       await deleteForumPostAPI(postId);
       setShowDeleteModal(false);
+      showToast('Đã xóa bài thảo luận.', 'info');
       // Redirect back to the forum page
       navigate(`/lms/course/${courseId}/forum/${post.forum_id}`);
     } catch (err) {
       console.error('Error deleting post:', err);
-      alert(err.response?.data?.error || 'Không thể xóa bài thảo luận này.');
+      showToast(err.response?.data?.error || 'Không thể xóa bài thảo luận này.', 'error');
       setShowDeleteModal(false);
     }
   };

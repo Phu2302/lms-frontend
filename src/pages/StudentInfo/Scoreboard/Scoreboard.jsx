@@ -78,7 +78,7 @@ function Scoreboard() {
           dat: (item.total_grade !== null && item.total_grade !== undefined) ? (Number(item.total_grade) >= 5.0 ? 'Đạt' : 'Không đạt') : '--',
           tinhTrang: (item.total_grade !== null && item.total_grade !== undefined) ? 'Đã có điểm' : 'Chưa có điểm',
           nhom: item.class_code,
-          ghiChu: ''
+          ghiChu: item.note || ''
         });
       });
 
@@ -109,7 +109,6 @@ function Scoreboard() {
         const tinChiTichLuyHK = semesterCredits;
 
         // Cộng dồn tích lũy chung
-        let gradedCumulativeCreditsBefore = cumulativeCredits;
         semester.grades.forEach(g => {
           const credit = Number(g.tinChi || 0);
           if (g.diemTK !== null && g.diemTK !== undefined) {
@@ -120,11 +119,6 @@ function Scoreboard() {
 
         const totalGradedCumulative = cumulativeCredits;
         const diemTichLuyChung = totalGradedCumulative > 0 ? (cumulativeGradePoints / totalGradedCumulative) : 0;
-        
-        // Chỉ tính tín chỉ tích lũy chung đối với các môn đạt (>= 5.0)
-        let passedCreditsThisSemester = semester.grades
-          .filter(g => g.diemTK !== null && g.diemTK !== undefined && Number(g.diemTK) >= 5.0)
-          .reduce((sum, g) => sum + Number(g.tinChi || 0), 0);
         
         // Cập nhật lại biến tích lũy chung qua các vòng lặp
         // Ở đây ta tính tổng số tín chỉ tích lũy (passed)

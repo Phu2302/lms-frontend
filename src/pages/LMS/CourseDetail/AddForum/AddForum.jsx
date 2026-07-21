@@ -49,10 +49,11 @@ function AddForum() {
         title: title.trim(),
         description: description.trim()
       });
+      showToast('Tạo diễn đàn thảo luận mới thành công!', 'success');
       navigate(`/lms/course/${courseId}`);
     } catch (err) {
       console.error('Error creating forum:', err);
-      alert(err.response?.data?.error || 'Không thể tạo diễn đàn thảo luận mới. Vui lòng thử lại.');
+      showToast(err.response?.data?.error || 'Không thể tạo diễn đàn thảo luận mới. Vui lòng thử lại.', 'error');
     } finally {
       setLoading(false);
     }

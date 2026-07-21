@@ -1,23 +1,39 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useToast } from '../../components/Toast/ToastContext';
 import './HomePage.css';
 
 function HomePage() {
   const navigate = useNavigate();
+  const { showToast } = useToast();
 
-  // dịch vụ nào cũng phải bị chặn lại để chọn Role trước nếu chưa đăng nhập!
+  // dịch vụ nào cũng phải bị chặn lại nếu không đúng role!
   const handleServiceClick = (serviceName) => {
     const token = localStorage.getItem('token');
+    const userString = localStorage.getItem('user');
+    const currentUser = userString ? JSON.parse(userString) : null;
+    const userRole = String(currentUser?.role || '1');
+
     if (token) {
-      if (serviceName === 'Thông tin sinh viên') {
-        navigate('/student-info');
-        return;
-      }
-      if (serviceName === 'Đăng ký in giấy xác nhận') {
-        navigate('/student-info', { state: { defaultTab: 'service' } });
-        return;
+      if (serviceName === 'Thông tin sinh viên' || serviceName === 'Đăng ký in giấy xác nhận') {
+        if (userRole === '2' || userRole === '3') {
+          showToast('Khu vực "Thông tin sinh viên" chỉ dành riêng cho Sinh viên. Giảng viên và Admin không có quyền truy cập!', 'error');
+          return;
+        }
+        if (serviceName === 'Thông tin sinh viên') {
+          navigate('/student-info?tab=info');
+          return;
+        }
+        if (serviceName === 'Đăng ký in giấy xác nhận') {
+          navigate('/student-info?tab=service', { state: { defaultTab: 'service' } });
+          return;
+        }
       }
       if (serviceName === 'Đăng ký môn học') {
+        if (userRole === '2' || userRole === '3') {
+          showToast('Chức năng "Đăng ký môn học" chỉ dành riêng cho Sinh viên!', 'error');
+          return;
+        }
         navigate('/course-registration');
         return;
       }
