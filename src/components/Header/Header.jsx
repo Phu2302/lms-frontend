@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { logoutAPI } from '../../api/auth/auth';
+import { useToast } from '../Toast/ToastContext';
 
 function Header({ view }) {
   const navigate = useNavigate();
+  const { showToast } = useToast();
   const [showDropdown, setShowDropdown] = useState(false);
 
   const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
@@ -55,7 +57,7 @@ function Header({ view }) {
       </div>
 
       <div className="navbar-right">
-        <button className="nav-notification" onClick={() => alert('Không có thông báo.')}>🔔</button>
+        <button className="nav-notification" onClick={() => showToast('Bạn chưa có thông báo mới.', 'info')}>🔔</button>
         <div className="avatar-wrapper">
           <div className="nav-avatar" onClick={() => setShowDropdown(!showDropdown)}>{userInitials}</div>
           {showDropdown && (

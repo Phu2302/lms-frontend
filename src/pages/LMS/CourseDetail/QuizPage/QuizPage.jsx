@@ -11,11 +11,13 @@ import {
 } from "../../../../api/LMS/CourseDetail/quizEntries";
 import { getStudentQuestionResponsesAPI, submitBulkResponsesAPI } from "../../../../api/LMS/CourseDetail/studentQuestionResponses";
 import Header from "../../../../components/Header/Header";
+import { useToast } from "../../../../components/Toast/ToastContext";
 import "./QuizPage.css";
 
 function QuizPage() {
   const navigate = useNavigate();
   const { quizId } = useParams();
+  const { showToast } = useToast();
 
   // Sidebar state
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
@@ -79,7 +81,7 @@ function QuizPage() {
           setRemainingSeconds(0);
           if (!autoSubmittedRef.current && !submitting) {
             autoSubmittedRef.current = true;
-            alert("⌛ Đã hết thời gian làm bài! Hệ thống đang tự động nộp bài làm của bạn.");
+            showToast("⌛ Đã hết thời gian làm bài! Hệ thống đang tự động nộp bài làm của bạn.", "info");
             handleAutoSubmitOnTimeOut();
           }
         } else {
@@ -164,19 +166,19 @@ function QuizPage() {
     }
     try {
       await deleteQuizEntryAPI(entryIdToDelete);
-      alert(`Đã xóa lượt thi #${entryIdToDelete} thành công! Sinh viên có thể làm lại bài thi.`);
+      showToast(`Đã xóa lượt thi #${entryIdToDelete} thành công! Sinh viên có thể làm lại bài thi.`, 'success');
       fetchAllEntries();
       fetchPastEntries();
     } catch (err) {
       console.error("Lỗi xóa lượt thi:", err);
-      alert("Xóa lượt thi thất bại: " + (err.response?.data?.error || err.message));
+      showToast("Xóa lượt thi thất bại: " + (err.response?.data?.error || err.message), 'error');
     }
   };
 
   const handleExportCSV = () => {
     const dataToExport = isTeacher ? allEntries : pastEntries;
     if (dataToExport.length === 0) {
-      alert("Chưa có dữ liệu lượt thi nào để xuất file!");
+      showToast("Chưa có dữ liệu lượt thi nào để xuất file!", 'error');
       return;
     }
 
@@ -202,7 +204,7 @@ function QuizPage() {
     setSavingManualScore(true);
     try {
       const res = await gradeQuestionResponseAPI(responseId, Number(scoreVal));
-      alert(`Đã cập nhật điểm cho câu hỏi! Điểm mới của bài làm: ${res.data.new_entry_score}`);
+      showToast(`Đã cập nhật điểm cho câu hỏi! Điểm mới của bài làm: ${res.data.new_entry_score}`, 'success');
       
       setSelectedReviewEntry(prev => ({
         ...prev,
@@ -214,7 +216,7 @@ function QuizPage() {
       if (isTeacher) fetchAllEntries();
     } catch (err) {
       console.error("Lỗi chấm điểm thủ công:", err);
-      alert("Không thể lưu điểm: " + (err.response?.data?.error || err.message));
+      showToast("Không thể lưu điểm: " + (err.response?.data?.error || err.message), 'error');
     } finally {
       setSavingManualScore(false);
     }
@@ -247,7 +249,7 @@ function QuizPage() {
       setIsStarted(true);
     } catch (err) {
       console.error("Lỗi tạo quiz entry:", err);
-      alert("Không thể bắt đầu làm bài: " + (err.response?.data?.error || err.message));
+      showToast("Không thể bắt đầu làm bài: " + (err.response?.data?.error || err.message), 'error');
     } finally {
       setLoading(false);
     }
@@ -278,7 +280,7 @@ function QuizPage() {
       setIsStarted(true);
     } catch (err) {
       console.error("Lỗi tiếp tục làm bài:", err);
-      alert("Không thể tiếp tục làm bài: " + (err.response?.data?.error || err.message));
+      showToast("Không thể tiếp tục làm bài: " + (err.response?.data?.error || err.message), 'error');
     } finally {
       setLoading(false);
     }
@@ -300,7 +302,7 @@ function QuizPage() {
       setSelectedReviewEntry(entry);
     } catch (err) {
       console.error("Lỗi tải chi tiết bài làm:", err);
-      alert("Không thể xem lại bài làm: " + (err.response?.data?.error || err.message));
+      showToast("Không thể xem lại bài làm: " + (err.response?.data?.error || err.message), 'error');
     } finally {
       setLoading(false);
     }
@@ -324,6 +326,7 @@ function QuizPage() {
   };
 
   const handleOptionChange = (optionIndex) => {
+    // Lưu option_index thật của option (1-based, không phụ thuộc vị trí visual sau shuffle)
     const updatedAnswers = {
       ...answers,
       [currentIndex]: optionIndex,
@@ -380,7 +383,7 @@ function QuizPage() {
 
   const handleSubmitQuiz = async () => {
     if (!entryId) {
-      alert("Không thể nộp bài: Quiz entry chưa được tạo.");
+      showToast("Không thể nộp bài: Quiz entry chưa được tạo.", 'error');
       return;
     }
 
@@ -398,9 +401,10 @@ function QuizPage() {
 
       const submitRes = await submitQuizEntryAPI(entryId, responses);
       setResult(submitRes.data);
+      showToast("Nộp bài thi thành công!", "success");
     } catch (err) {
       console.error("Lỗi nộp bài:", err);
-      alert("Nộp bài thất bại: " + (err.response?.data?.error || err.message));
+      showToast("Nộp bài thất bại: " + (err.response?.data?.error || err.message), 'error');
     } finally {
       setSubmitting(false);
     }
@@ -606,8 +610,8 @@ function QuizPage() {
 
                     <div className="options-list">
                       {q.options && q.options.map((opt, optIdx) => {
-                        const isStudentSelected = studentAnswer !== null && Number(studentAnswer) === optIdx;
-                        const isCorrectOption = canSeeCorrectAnswers && correctIndexes.includes(optIdx);
+                        const isStudentSelected = studentAnswer !== null && Number(studentAnswer) === Number(opt.option_index);
+                        const isCorrectOption = canSeeCorrectAnswers && correctIndexes.includes(Number(opt.option_index));
 
                         let optionClass = "option-item-label";
                         if (isStudentSelected) {
@@ -1007,8 +1011,8 @@ function QuizPage() {
                     <input
                       type="radio"
                       name={`quiz-options-${currentQuestion.question_id}`}
-                      checked={answers[currentIndex] === optIdx}
-                      onChange={() => handleOptionChange(optIdx)}
+                      checked={answers[currentIndex] === opt.option_index}
+                      onChange={() => handleOptionChange(opt.option_index)}
                     />
                     {String.fromCharCode(65 + optIdx)}. {opt.text_content}
                   </label>

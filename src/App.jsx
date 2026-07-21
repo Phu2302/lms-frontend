@@ -21,9 +21,12 @@ import EditQuiz from './pages/LMS/CourseDetail/EditQuiz/EditQuiz';
 import AddMaterial from './pages/LMS/CourseDetail/AddMaterial/AddMaterial';
 import AddForum from './pages/LMS/CourseDetail/AddForum/AddForum';
 
+import { ToastProvider } from './components/Toast/ToastContext';
+
 function App() {
   return (
-    <BrowserRouter>
+    <ToastProvider>
+      <BrowserRouter>
       <Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/login" element={<LoginPage />} />
@@ -48,7 +51,8 @@ function App() {
         <Route path="/lms/course/:courseId/chapter/:chapterId/add-forum" element={<AddForum />} />
       </Routes>
     </BrowserRouter>
-  );
+  </ToastProvider>
+);
 }
 
 export default App;

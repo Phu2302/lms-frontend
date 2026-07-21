@@ -55,10 +55,11 @@ function AddMaterial() {
         content_link: contentLink.trim() || undefined,
         chapter_order: chapterOrder
       });
+      showToast('Đã thêm học liệu mới thành công!', 'success');
       navigate(`/lms/course/${courseId}`);
     } catch (err) {
       console.error('Error creating material:', err);
-      alert(err.response?.data?.error || 'Không thể tạo học liệu mới. Vui lòng thử lại.');
+      showToast(err.response?.data?.error || 'Không thể tạo học liệu mới. Vui lòng thử lại.', 'error');
     } finally {
       setLoading(false);
     }

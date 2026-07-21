@@ -2,11 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import api from '../../../../api/axios';
 import Header from '../../../../components/Header/Header';
+import { useToast } from '../../../../components/Toast/ToastContext';
 import './AddQuiz.css';
 
 function AddQuiz() {
   const { courseId, chapterId } = useParams();
   const navigate = useNavigate();
+  const { showToast } = useToast();
 
   // Thông tin bài Quiz
   const [courseName, setCourseName] = useState('');
@@ -87,7 +89,7 @@ function AddQuiz() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!title.trim()) {
-      alert('Vui lòng nhập tiêu đề bài Quiz!');
+      showToast('Vui lòng nhập tiêu đề bài Quiz!', 'error');
       return;
     }
 
@@ -120,7 +122,7 @@ function AddQuiz() {
           question_type: q.question_type,
           description: q.description.trim(),
           question_score: Number(q.question_score) || 0,
-          correct_answer_indexes: q.question_type === 'MULTIPLE_CHOICE' ? [Number(q.correct_index)] : undefined,
+          correct_answer_indexes: q.question_type === 'MULTIPLE_CHOICE' ? [Number(q.correct_index) + 1] : undefined,
           short_answer_key: q.question_type === 'SHORT_ANSWER' ? q.short_answer_key.trim() : undefined,
           coding_language: q.question_type === 'CODE' ? q.coding_language : undefined,
           s3_object_code: q.question_type === 'CODE' ? q.s3_object_code : undefined
@@ -144,11 +146,11 @@ function AddQuiz() {
         }
       }
 
-      alert('Tạo bài Quiz và danh sách câu hỏi thành công!');
+      showToast('Tạo bài Quiz và danh sách câu hỏi thành công!', 'success');
       navigate(`/lms/course/${courseId}`);
     } catch (err) {
       console.error('Error creating quiz:', err);
-      alert(err.response?.data?.error || 'Không thể tạo quiz mới. Vui lòng thử lại.');
+      showToast(err.response?.data?.error || 'Không thể tạo quiz mới. Vui lòng thử lại.', 'error');
     } finally {
       setLoading(false);
     }

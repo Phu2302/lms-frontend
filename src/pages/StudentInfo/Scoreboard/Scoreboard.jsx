@@ -78,7 +78,7 @@ function Scoreboard() {
           dat: (item.total_grade !== null && item.total_grade !== undefined) ? (Number(item.total_grade) >= 5.0 ? 'Đạt' : 'Không đạt') : '--',
           tinhTrang: (item.total_grade !== null && item.total_grade !== undefined) ? 'Đã có điểm' : 'Chưa có điểm',
           nhom: item.class_code,
-          ghiChu: ''
+          ghiChu: item.note || ''
         });
       });
 

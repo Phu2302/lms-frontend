@@ -1,18 +1,34 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import { getUserProfileAPI } from '../../api/StudentInfo/Profile/users';
 import { logoutAPI } from '../../api/auth/auth';
 import ExamSchedule from './ExamSchedule/ExamSchedule';
 import ServiceStudent from './ServiceStudent/ServiceStudent';
 import Scoreboard from './Scoreboard/Scoreboard';
+import { useToast } from '../../components/Toast/ToastContext';
 import './StudentInfo.css';
 
 function StudentInfo() {
   const navigate = useNavigate();
   const location = useLocation();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const { showToast } = useToast();
 
-  // Tab con hoạt động: 'info', 'exam' hoặc 'service'
-  const [activeSubTab, setActiveSubTab] = useState(location.state?.defaultTab || 'info');
+  // Tab con hoạt động: 'info', 'exam', 'scoreboard' hoặc 'service'
+  const initialTab = searchParams.get('tab') || location.state?.defaultTab || 'info';
+  const [activeSubTab, setActiveSubTab] = useState(initialTab);
+
+  const handleSubTabChange = (tabName) => {
+    setActiveSubTab(tabName);
+    setSearchParams({ tab: tabName }, { replace: true });
+  };
+
+  useEffect(() => {
+    const tabFromUrl = searchParams.get('tab');
+    if (tabFromUrl && tabFromUrl !== activeSubTab) {
+      setActiveSubTab(tabFromUrl);
+    }
+  }, [searchParams]);
 
   const handleLogout = async () => {
     try {
@@ -30,10 +46,20 @@ function StudentInfo() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  // Gọi API lấy profile khi component mount
+  // Gọi API lấy profile khi component mount & Kiểm tra phân quyền
   useEffect(() => {
+    const userString = localStorage.getItem('user');
+    const currentUser = userString ? JSON.parse(userString) : null;
+    const userRole = String(currentUser?.role || '1');
+
+    if (userRole === '2' || userRole === '3') {
+      showToast('Trang "Thông tin sinh viên" chỉ dành riêng cho Sinh viên. Giảng viên và Admin không được phép truy cập!', 'error');
+      navigate(userRole === '2' ? '/online-grading' : '/lms', { replace: true });
+      return;
+    }
+
     fetchProfile();
-  }, []);
+  }, [navigate]);
 
   const fetchProfile = async () => {
     setLoading(true);
@@ -60,18 +86,24 @@ function StudentInfo() {
         <div className="nav-tabs-wrapper">
           <button 
             className={`nav-tab-btn ${activeSubTab === 'info' ? 'active' : ''}`}
-            onClick={() => setActiveSubTab('info')}
+            onClick={() => handleSubTabChange('info')}
           >
             Thông tin sinh viên
           </button>
-          <button className="nav-tab-btn" onClick={() => navigate('/lms/schedule')}>
-            Thời khoá biểu
+          <button 
+            className={`nav-tab-btn ${activeSubTab === 'service' ? 'active' : ''}`}
+            onClick={() => handleSubTabChange('service')}
+          >
+            Đăng ký in giấy xác nhận
           </button>
           <button 
             className={`nav-tab-btn ${activeSubTab === 'exam' ? 'active' : ''}`}
-            onClick={() => setActiveSubTab('exam')}
+            onClick={() => handleSubTabChange('exam')}
           >
             Lịch thi
+          </button>
+          <button className="nav-tab-btn" onClick={() => navigate('/lms/schedule')}>
+            Thời khoá biểu
           </button>
         </div>
         <div className="nav-logout-wrapper" style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', paddingRight: '20px' }}>
@@ -89,15 +121,15 @@ function StudentInfo() {
           <div className="sidebar-menu-list">
             <button 
               className={`sidebar-item-btn ${activeSubTab === 'info' || activeSubTab === 'exam' ? 'active' : ''}`}
-              onClick={() => setActiveSubTab('info')}
+              onClick={() => handleSubTabChange('info')}
             >
               ☰ Sinh viên
             </button>
             <button 
               className={`sidebar-item-btn ${activeSubTab === 'service' ? 'active' : ''}`}
-              onClick={() => setActiveSubTab('service')}
+              onClick={() => handleSubTabChange('service')}
             >
-              ☰ Dịch vụ
+              ☰ Dịch vụ (Giấy xác nhận)
             </button>
             <button 
               className={`sidebar-item-btn ${activeSubTab === 'scoreboard' ? 'active' : ''}`}

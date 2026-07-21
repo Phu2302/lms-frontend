@@ -3,11 +3,13 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { getForumAPI } from '../../../../api/LMS/CourseDetail/forums';
 import { getForumPostsByForumIdAPI, createForumPostAPI, deleteForumPostAPI } from '../../../../api/LMS/CourseDetail/forumPosts';
 import Header from '../../../../components/Header/Header';
+import { useToast } from '../../../../components/Toast/ToastContext';
 import './ForumPage.css';
 
 function ForumPage() {
   const { courseId, forumId } = useParams();
   const navigate = useNavigate();
+  const { showToast } = useToast();
   const [forum, setForum] = useState(null);
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -55,7 +57,7 @@ function ForumPage() {
   const handleCreatePost = async (e) => {
     e.preventDefault();
     if (!title.trim() || !content.trim()) {
-      alert('Vui lòng nhập đầy đủ tiêu đề và nội dung!');
+      showToast('Vui lòng nhập đầy đủ tiêu đề và nội dung!', 'error');
       return;
     }
 
@@ -69,12 +71,13 @@ function ForumPage() {
       setTitle('');
       setContent('');
       setShowForm(false);
+      showToast('Đăng bài thảo luận thành công!', 'success');
       // Reload posts
       const postsRes = await getForumPostsByForumIdAPI(forumId);
       setPosts(postsRes.data);
     } catch (err) {
       console.error('Error creating post:', err);
-      alert('Đã xảy ra lỗi khi đăng bài. Vui lòng thử lại.');
+      showToast('Đã xảy ra lỗi khi đăng bài. Vui lòng thử lại.', 'error');
     } finally {
       setSubmitting(false);
     }
@@ -92,9 +95,10 @@ function ForumPage() {
       setPosts(posts.filter(p => p.post_id !== postToDelete));
       setShowDeleteModal(false);
       setPostToDelete(null);
+      showToast('Đã xóa bài viết thành công.', 'info');
     } catch (err) {
       console.error('Error deleting post:', err);
-      alert(err.response?.data?.error || 'Không thể xóa bài viết này.');
+      showToast(err.response?.data?.error || 'Không thể xóa bài viết này.', 'error');
       setShowDeleteModal(false);
       setPostToDelete(null);
     }

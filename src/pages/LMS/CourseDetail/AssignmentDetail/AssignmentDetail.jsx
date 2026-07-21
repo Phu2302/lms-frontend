@@ -2,11 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import Header from '../../../../components/Header/Header';
 import { getClassGradesAPI, saveBatchGradesAPI } from '../../../../api/teacher/grades';
+import { useToast } from '../../../../components/Toast/ToastContext';
 import './AssignmentDetail.css';
 
 function AssignmentDetail() {
   const navigate = useNavigate();
   const { assignmentId } = useParams();
+  const { showToast } = useToast();
 
   const userString = localStorage.getItem('user');
   const currentUser = userString ? JSON.parse(userString) : null;
@@ -74,11 +76,11 @@ function AssignmentDetail() {
   const handleStudentSubmit = (e) => {
     e.preventDefault();
     if (!submissionLink && !submittedFile) {
-      alert('Vui lòng nhập link bài nộp hoặc chọn file!');
+      showToast('Vui lòng nhập link bài nộp hoặc chọn file!', 'error');
       return;
     }
     setIsSubmitted(true);
-    alert('Nộp bài tập thành công!');
+    showToast('Nộp bài tập thành công!', 'success');
   };
 
   const handleGradeChange = (studentId, field, value) => {
@@ -98,10 +100,10 @@ function AssignmentDetail() {
         assignment_grade: s.assignment_grade !== '' ? Number(s.assignment_grade) : null
       }));
       await saveBatchGradesAPI({ class_id: 101, grades: formattedGrades });
-      alert('Đã lưu điểm bài tập cho sinh viên thành công!');
+      showToast('Đã lưu điểm bài tập cho sinh viên thành công!', 'success');
     } catch (err) {
       console.error('Error saving assignment grades:', err);
-      alert('Không thể lưu điểm. Vui lòng thử lại.');
+      showToast('Không thể lưu điểm. Vui lòng thử lại.', 'error');
     } finally {
       setIsSaving(false);
     }
@@ -178,7 +180,7 @@ function AssignmentDetail() {
                       <td>{s.submitted ? s.submitted_at : '--'}</td>
                       <td>
                         {s.submitted ? (
-                          <a href="#download" onClick={(e) => { e.preventDefault(); alert(`Tải xuống bài nộp: ${s.file_name}`); }} style={{ color: '#2b6cb0', textDecoration: 'underline' }}>
+                          <a href="#download" onClick={(e) => { e.preventDefault(); showToast(`Tải xuống bài nộp: ${s.file_name}`, 'info'); }} style={{ color: '#2b6cb0', textDecoration: 'underline' }}>
                             📄 {s.file_name}
                           </a>
                         ) : '--'}

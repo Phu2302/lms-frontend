@@ -17,11 +17,21 @@ function LoginPage() {
   // Nếu đã có JWT token → tự động chuyển hướng, không cần đăng nhập lại
   useEffect(() => {
     const token = localStorage.getItem('token');
+    const userString = localStorage.getItem('user');
+    const currentUser = userString ? JSON.parse(userString) : null;
+    const userRole = String(currentUser?.role || '1');
+
     if (token) {
+      if (userRole === '2' || userRole === '3') {
+        if (targetService === 'Thông tin sinh viên' || targetService === 'Đăng ký in giấy xác nhận') {
+          navigate(userRole === '2' ? '/online-grading' : '/lms', { replace: true });
+          return;
+        }
+      }
       if (targetService === 'Thông tin sinh viên') {
-        navigate('/student-info', { replace: true });
+        navigate('/student-info?tab=info', { replace: true });
       } else if (targetService === 'Đăng ký in giấy xác nhận') {
-        navigate('/student-info', { replace: true, state: { defaultTab: 'service' } });
+        navigate('/student-info?tab=service', { replace: true, state: { defaultTab: 'service' } });
       } else if (targetService === 'Đăng ký môn học') {
         navigate('/course-registration', { replace: true });
       } else {
@@ -49,12 +59,11 @@ function LoginPage() {
       localStorage.setItem('token', res.data.token);
       localStorage.setItem('user', JSON.stringify(res.data.user));
 
-      // Điều hướng dựa trên role từ backend hoặc targetService
+      // Điều hướng dựa trên role từ backend
       const userRole = String(res.data.user.role);
 
-      if (targetService === 'Thông tin sinh viên' && userRole === '2') {
-        // role 2 = giảng viên → chặn giảng viên xem thông tin sinh viên
-        setError('LỖI TRUY CẬP: Khu vực này chỉ dành riêng cho Sinh Viên!');
+      if ((targetService === 'Thông tin sinh viên' || targetService === 'Đăng ký in giấy xác nhận') && (userRole === '2' || userRole === '3')) {
+        setError('LỖI TRUY CẬP: Khu vực "Thông tin sinh viên" chỉ dành riêng cho Sinh Viên! Giảng viên và Admin không có quyền truy cập.');
         localStorage.removeItem('token');
         localStorage.removeItem('user');
         setLoading(false);
@@ -63,11 +72,13 @@ function LoginPage() {
 
       // Điều hướng động theo dịch vụ đã chọn
       if (targetService === 'Thông tin sinh viên') {
-        navigate('/student-info');
+        navigate('/student-info?tab=info');
       } else if (targetService === 'Đăng ký in giấy xác nhận') {
-        navigate('/student-info', { state: { defaultTab: 'service' } });
+        navigate('/student-info?tab=service', { state: { defaultTab: 'service' } });
       } else if (targetService === 'Đăng ký môn học') {
         navigate('/course-registration');
+      } else if (userRole === '2') {
+        navigate('/online-grading');
       } else {
         navigate('/lms');
       }

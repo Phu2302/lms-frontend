@@ -3,10 +3,12 @@ import { useNavigate } from 'react-router-dom';
 import Header from '../../components/Header/Header';
 import { getUserClassesAPI } from '../../api/StudentInfo/Profile/users';
 import { getClassGradesAPI, saveBatchGradesAPI } from '../../api/teacher/grades';
+import { useToast } from '../../components/Toast/ToastContext';
 import './OnlineGrading.css';
 
 function OnlineGrading() {
   const navigate = useNavigate();
+  const { showToast } = useToast();
   const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
 
   const [classes, setClasses] = useState([]);
@@ -36,6 +38,13 @@ function OnlineGrading() {
     }
   };
 
+  const parseWeight = (val, defaultVal) => {
+    if (val === null || val === undefined || val === '') return defaultVal;
+    const num = Number(val);
+    if (isNaN(num)) return defaultVal;
+    return num <= 1 && num > 0 ? Math.round(num * 100) : num;
+  };
+
   const handleSelectClass = async (cls) => {
     setSelectedClass(cls);
     setLoading(true);
@@ -43,13 +52,18 @@ function OnlineGrading() {
       const lmsRes = await getClassGradesAPI(cls.class_id || cls.id);
       const lmsStudents = lmsRes.data || [];
       
-      // Nếu có học sinh đầu tiên và có lưu percentage, set lại state
+      // Nếu có học sinh và có lưu percentage, parse lại trọng số (mặc định 10 - 20 - 30 - 40 tổng = 100%)
       if (lmsStudents.length > 0) {
         const first = lmsStudents[0];
-        if (first.percentage_1) setQuizWeight(Number(first.percentage_1));
-        if (first.percentage_2) setAssignmentWeight(Number(first.percentage_2));
-        if (first.percentage_3) setMidtermWeight(Number(first.percentage_3));
-        if (first.percentage_4) setFinalWeight(Number(first.percentage_4));
+        setQuizWeight(parseWeight(first.percentage_1, 10));
+        setAssignmentWeight(parseWeight(first.percentage_2, 20));
+        setMidtermWeight(parseWeight(first.percentage_3, 30));
+        setFinalWeight(parseWeight(first.percentage_4, 40));
+      } else {
+        setQuizWeight(10);
+        setAssignmentWeight(20);
+        setMidtermWeight(30);
+        setFinalWeight(40);
       }
 
       setStudentsData(lmsStudents.map(st => ({
@@ -65,7 +79,7 @@ function OnlineGrading() {
     } catch (err) {
       console.warn('Lỗi lấy danh sách sinh viên LMS:', err);
       setStudentsData([]);
-      alert('Lớp học này chưa có sinh viên nào hoặc API không khả dụng.');
+      showToast('Lớp học này chưa có sinh viên nào hoặc API không khả dụng.', 'info');
     } finally {
       setLoading(false);
     }
@@ -82,6 +96,39 @@ function OnlineGrading() {
 
   const handleSaveGrades = async () => {
     if (!selectedClass) return;
+
+    // 1. Kiểm tra không có trọng số nào < 0
+    if (quizWeight < 0 || assignmentWeight < 0 || midtermWeight < 0 || finalWeight < 0) {
+      showToast('Trọng số tỷ lệ phần trăm các cột không được nhỏ hơn 0%!', 'error');
+      return;
+    }
+
+    // 2. Kiểm tra tổng phần trăm các cột phải đúng 100%
+    const totalWeight = quizWeight + assignmentWeight + midtermWeight + finalWeight;
+    if (totalWeight !== 100) {
+      showToast(`Tổng phần trăm trọng số các cột phải đúng bằng 100%! (Hiện tại tổng là ${totalWeight}%)`, 'error');
+      return;
+    }
+
+    // 3. Kiểm tra điểm nhập vào của từng sinh viên (phải từ 0 đến 10)
+    for (const st of studentsData) {
+      const gradesToCheck = [
+        { name: 'Quiz', val: st.quiz_grade },
+        { name: 'Bài tập', val: st.assignment_grade },
+        { name: 'Giữa kỳ', val: st.midterm_grade },
+        { name: 'Cuối kỳ', val: st.final_grade }
+      ];
+      for (const item of gradesToCheck) {
+        if (item.val !== '' && item.val !== null && item.val !== undefined) {
+          const num = Number(item.val);
+          if (isNaN(num) || num < 0 || num > 10) {
+            showToast(`Điểm ${item.name} của sinh viên ${st.user_name || st.student_id} phải nằm trong khoảng từ 0 đến 10!`, 'error');
+            return;
+          }
+        }
+      }
+    }
+
     setIsSaving(true);
     try {
       const gradesToSave = studentsData.map(st => {
@@ -105,10 +152,11 @@ function OnlineGrading() {
         class_id: Number(selectedClass.class_id || selectedClass.id),
         grades: gradesToSave
       });
-      alert('Đã chốt bảng điểm thành công! Điểm đã được cập nhật trực tiếp vào bảng điểm của sinh viên.');
+      showToast('Đã chốt bảng điểm thành công! Điểm và trọng số phần trăm đã được lưu đồng bộ vào cơ sở dữ liệu.', 'success');
+      handleSelectClass(selectedClass);
     } catch (err) {
       console.warn('Lỗi lưu điểm:', err);
-      alert('Chưa cấu hình API lưu điểm (Backend). Vui lòng kiểm tra lại.');
+      showToast(err.response?.data?.error || 'Lỗi khi lưu điểm. Vui lòng kiểm tra lại.', 'error');
     } finally {
       setIsSaving(false);
     }

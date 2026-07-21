@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { getUserProfileAPI } from '../../../api/StudentInfo/Profile/users';
 import { getUserRequestsAPI, createStudentRequestAPI } from '../../../api/StudentInfo/ServiceStudent/requests';
+import { useToast } from '../../../components/Toast/ToastContext';
 import './ServiceStudent.css';
 
 const formatDate = (dateStr) => {
@@ -20,6 +21,7 @@ const formatDate = (dateStr) => {
 };
 
 function ServiceStudent() {
+  const { showToast } = useToast();
   const [studentData, setStudentData] = useState(null);
   const [requests, setRequests] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -58,11 +60,11 @@ function ServiceStudent() {
   const handleRegister = async (e) => {
     e.preventDefault();
     if (!reason) {
-      alert('Vui lòng chọn lý do xin xác nhận!');
+      showToast('Vui lòng chọn lý do xin xác nhận!', 'error');
       return;
     }
     if (!location) {
-      alert('Vui lòng chọn cơ sở nhận kết quả!');
+      showToast('Vui lòng chọn cơ sở nhận kết quả!', 'error');
       return;
     }
 
@@ -74,13 +76,13 @@ function ServiceStudent() {
       });
       setReason('');
       setLocation('');
-      alert('Đăng ký giấy xác nhận sinh viên thành công!');
+      showToast('Đăng ký giấy xác nhận sinh viên thành công!', 'success');
       // Reload requests list
       const requestsRes = await getUserRequestsAPI();
       setRequests(requestsRes.data || []);
     } catch (err) {
       console.error('Error creating request:', err);
-      alert(err.response?.data?.error || 'Đăng ký thất bại. Vui lòng thử lại sau.');
+      showToast(err.response?.data?.error || 'Đăng ký thất bại. Vui lòng thử lại sau.', 'error');
     } finally {
       setIsSubmitting(false);
     }

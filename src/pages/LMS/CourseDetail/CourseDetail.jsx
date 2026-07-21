@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { getClassDetailAPI } from '../../../api/LMS/CourseDetail/classes';
 import { createChapterAPI, deleteChapterAPI } from '../../../api/LMS/CourseDetail/chapters';
 import { createQuizAPI, deleteQuizAPI } from '../../../api/LMS/CourseDetail/quizzes';
@@ -9,14 +9,28 @@ import { getClassAnnouncementsAPI, createAnnouncementAPI, deleteAnnouncementAPI 
 import { getClassGradesAPI, saveBatchGradesAPI, getStudentGradeAPI, publishGradesAPI } from '../../../api/teacher/grades';
 import { getAllQuizEntriesAPI } from '../../../api/LMS/CourseDetail/quizEntries';
 import Header from '../../../components/Header/Header';
+import { useToast } from '../../../components/Toast/ToastContext';
 import './CourseDetail.css';
 
 function CourseDetail() {
   const { courseId } = useParams(); // Lấy mã môn học từ URL (ví dụ: CO3005)
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const { showToast } = useToast();
 
-  // State quản lý Tab nào đang bật (mặc định là 'khoahoc')
-  const [activeTab, setActiveTab] = useState('khoahoc');
+  // State quản lý Tab nào đang bật (Nếu có URL param ?tab= thì lấy tab đó khi Reload, nếu vào từ trang danh sách thì mặc định là 'khoahoc')
+  const initialTab = searchParams.get('tab') || 'khoahoc';
+  const [activeTab, setActiveTab] = useState(initialTab);
+
+  const handleTabChange = (tabName) => {
+    setActiveTab(tabName);
+    setSearchParams({ tab: tabName }, { replace: true });
+  };
+
+  useEffect(() => {
+    const tabFromUrl = searchParams.get('tab') || 'khoahoc';
+    setActiveTab(tabFromUrl);
+  }, [searchParams]);
 
   // State dữ liệu từ API
   const [classData, setClassData] = useState(null);
@@ -109,6 +123,10 @@ function CourseDetail() {
       
       setClassData(data);
       
+      if (data.class && data.class.is_grades_published !== undefined) {
+        setIsGradesPublished(Boolean(data.class.is_grades_published));
+      }
+      
       // Extract chapters từ response
       const chapterList = data.chapters || data.Chapters || [];
       const materials = data.materials || data.Materials || [];
@@ -129,8 +147,20 @@ function CourseDetail() {
 
       setChapters(chaptersWithContent);
       
-      // Mở accordion đầu tiên, đóng các cái khác
-      setOpenSections(chapterList.map((_, i) => i === 0));
+      // Mặc định tất cả các chương đều mở (thả xuống ▼), giữ trạng thái cuộn lên (▶) từ URL hoặc localStorage khi F5 / out ra vào lại
+      const closedParam = searchParams.get('closed');
+      let closedIndexes = [];
+      if (closedParam !== null) {
+        closedIndexes = closedParam ? closedParam.split(',').map(Number) : [];
+      } else {
+        try {
+          const savedClosed = localStorage.getItem(`collapsed_chapters_${courseId}_${currentUserId}`);
+          if (savedClosed) {
+            closedIndexes = JSON.parse(savedClosed);
+          }
+        } catch (e) {}
+      }
+      setOpenSections(chapterList.map((_, i) => !closedIndexes.includes(i)));
     } catch (err) {
       console.error('Lỗi tải chi tiết lớp học:', err);
       const status = err.response?.status;
@@ -160,6 +190,20 @@ function CourseDetail() {
       if (hasEditingPrivileges) {
         const res = await getClassGradesAPI(courseId);
         let grades = res.data || [];
+
+        if (grades.length > 0) {
+          const first = grades[0];
+          const parseWeight = (val, defaultVal) => {
+            if (val === null || val === undefined || val === '') return defaultVal;
+            const num = Number(val);
+            if (isNaN(num)) return defaultVal;
+            return num <= 1 && num > 0 ? Math.round(num * 100) : num;
+          };
+          setQuizWeight(parseWeight(first.percentage_1, 10));
+          setAssignmentWeight(parseWeight(first.percentage_2, 20));
+          setMidtermWeight(parseWeight(first.percentage_3, 30));
+          setFinalWeight(parseWeight(first.percentage_4, 40));
+        }
 
         // Lấy tất cả bài quiz của lớp
         const chapterList = classData?.chapters || classData?.Chapters || [];
@@ -226,9 +270,30 @@ function CourseDetail() {
 
   // Hàm đảo ngược trạng thái đóng/mở khi click vào Header của Accordion
   const toggleSection = (index) => {
+    const isCurrentlyOpen = openSections[index] !== false;
+    const newOpenState = !isCurrentlyOpen;
+
     const updatedSections = [...openSections];
-    updatedSections[index] = !updatedSections[index];
+    updatedSections[index] = newOpenState;
     setOpenSections(updatedSections);
+
+    // Lưu danh sách index các chương bị cuộn lên (đóng) vào URL & localStorage để giữ khi F5 hoặc khi Out ra vào lại
+    const currentClosed = [];
+    updatedSections.forEach((isOpen, i) => {
+      if (isOpen === false) currentClosed.push(i);
+    });
+
+    try {
+      localStorage.setItem(`collapsed_chapters_${courseId}_${currentUserId}`, JSON.stringify(currentClosed));
+    } catch (e) {}
+
+    const newSearchParams = new URLSearchParams(searchParams);
+    if (currentClosed.length > 0) {
+      newSearchParams.set('closed', currentClosed.join(','));
+    } else {
+      newSearchParams.delete('closed');
+    }
+    setSearchParams(newSearchParams, { replace: true });
   };
 
   const handleAddChapter = async (e) => {
@@ -245,7 +310,7 @@ function CourseDetail() {
       fetchClassDetail();
     } catch (err) {
       console.error('Error creating chapter:', err);
-      alert(err.response?.data?.error || 'Không thể tạo chương mới. Vui lòng thử lại.');
+      showToast(err.response?.data?.error || 'Không thể tạo chương mới. Vui lòng thử lại.', 'error');
     }
   };
 
@@ -266,9 +331,10 @@ function CourseDetail() {
       setTargetChapterId(null);
       setShowAddQuizModal(false);
       fetchClassDetail();
+      showToast('Đã tạo bài Quiz thành công!', 'success');
     } catch (err) {
       console.error('Error creating quiz:', err);
-      alert(err.response?.data?.error || 'Không thể tạo quiz mới. Vui lòng thử lại.');
+      showToast(err.response?.data?.error || 'Không thể tạo quiz mới. Vui lòng thử lại.', 'error');
     }
   };
 
@@ -286,9 +352,10 @@ function CourseDetail() {
       setTargetChapterId(null);
       setShowAddForumModal(false);
       fetchClassDetail();
+      showToast('Đã tạo diễn đàn thảo luận thành công!', 'success');
     } catch (err) {
       console.error('Error creating forum:', err);
-      alert(err.response?.data?.error || 'Không thể tạo diễn đàn thảo luận mới. Vui lòng thử lại.');
+      showToast(err.response?.data?.error || 'Không thể tạo diễn đàn thảo luận mới. Vui lòng thử lại.', 'error');
     }
   };
 
@@ -314,9 +381,10 @@ function CourseDetail() {
       setTargetChapterId(null);
       setShowAddMaterialModal(false);
       fetchClassDetail();
+      showToast('Đã tạo học liệu mới thành công!', 'success');
     } catch (err) {
       console.error('Error creating material:', err);
-      alert(err.response?.data?.error || 'Không thể tạo học liệu mới. Vui lòng thử lại.');
+      showToast(err.response?.data?.error || 'Không thể tạo học liệu mới. Vui lòng thử lại.', 'error');
     }
   };
 
@@ -346,9 +414,10 @@ function CourseDetail() {
       setShowEditMaterialModal(false);
       setEditingMaterial(null);
       fetchClassDetail();
+      showToast('Đã cập nhật học liệu thành công!', 'success');
     } catch (err) {
       console.error('Error updating material:', err);
-      alert(err.response?.data?.error || 'Không thể cập nhật học liệu. Vui lòng thử lại.');
+      showToast(err.response?.data?.error || 'Không thể cập nhật học liệu. Vui lòng thử lại.', 'error');
     }
   };
 
@@ -365,9 +434,10 @@ function CourseDetail() {
       setNewAnnouncementContent('');
       setShowAddAnnouncementModal(false);
       fetchAnnouncements();
+      showToast('Đã tạo thông báo mới thành công!', 'success');
     } catch (err) {
       console.error('Error creating announcement:', err);
-      alert(err.response?.data?.error || 'Không thể tạo thông báo. Vui lòng thử lại.');
+      showToast(err.response?.data?.error || 'Không thể tạo thông báo. Vui lòng thử lại.', 'error');
     }
   };
 
@@ -376,6 +446,7 @@ function CourseDetail() {
     try {
       await deleteAnnouncementAPI(id);
       fetchAnnouncements();
+      showToast('Đã xóa thông báo.', 'info');
     } catch (err) {
       console.error('Error deleting announcement:', err);
     }
@@ -401,6 +472,38 @@ function CourseDetail() {
   };
 
   const handleSaveBatchGrades = async () => {
+    // 1. Kiểm tra không có trọng số nào < 0
+    if (quizWeight < 0 || assignmentWeight < 0 || midtermWeight < 0 || finalWeight < 0) {
+      showToast('Trọng số tỷ lệ phần trăm các cột không được nhỏ hơn 0%!', 'error');
+      return;
+    }
+
+    // 2. Kiểm tra tổng phần trăm các cột phải đúng 100%
+    const totalWeight = quizWeight + assignmentWeight + midtermWeight + finalWeight;
+    if (totalWeight !== 100) {
+      showToast(`Tổng phần trăm trọng số các cột phải đúng bằng 100%! (Hiện tại tổng là ${totalWeight}%)`, 'error');
+      return;
+    }
+
+    // 3. Kiểm tra điểm nhập vào từ 0 đến 10
+    for (const g of classGrades) {
+      const gradesToCheck = [
+        { name: 'Quiz', val: g.quiz_grade },
+        { name: 'Bài tập', val: g.assignment_grade },
+        { name: 'Giữa kỳ', val: g.midterm_grade },
+        { name: 'Cuối kỳ', val: g.final_grade }
+      ];
+      for (const item of gradesToCheck) {
+        if (item.val !== '' && item.val !== null && item.val !== undefined) {
+          const num = Number(item.val);
+          if (isNaN(num) || num < 0 || num > 10) {
+            showToast(`Điểm ${item.name} của sinh viên ${g.user_name || g.student_id} phải nằm trong khoảng từ 0 đến 10!`, 'error');
+            return;
+          }
+        }
+      }
+    }
+
     setIsSavingGrades(true);
     try {
       const gradesToSave = classGrades.map(g => {
@@ -424,11 +527,11 @@ function CourseDetail() {
         class_id: Number(courseId),
         grades: gradesToSave
       });
-      alert('Đã lưu bảng điểm thành công!');
+      showToast('Đã lưu bảng điểm thành công!', 'success');
       fetchGradesData();
     } catch (err) {
       console.error('Error saving grades:', err);
-      alert(err.response?.data?.error || 'Không thể lưu bảng điểm. Vui lòng thử lại.');
+      showToast(err.response?.data?.error || 'Không thể lưu bảng điểm. Vui lòng thử lại.', 'error');
     } finally {
       setIsSavingGrades(false);
     }
@@ -456,9 +559,10 @@ function CourseDetail() {
       setShowDeleteConfirm(false);
       setItemToDelete(null);
       fetchClassDetail();
+      showToast(`Đã xóa thành công!`, 'info');
     } catch (err) {
       console.error(`Error deleting ${type}:`, err);
-      alert(err.response?.data?.error || `Không thể xóa ${type}. Vui lòng thử lại.`);
+      showToast(err.response?.data?.error || `Không thể xóa ${type}. Vui lòng thử lại.`, 'error');
       setShowDeleteConfirm(false);
       setItemToDelete(null);
     }
@@ -472,9 +576,10 @@ function CourseDetail() {
       const newStatus = !isGradesPublished;
       await publishGradesAPI(courseId, newStatus);
       setIsGradesPublished(newStatus);
-      alert(newStatus ? 'Đã công bố điểm cho sinh viên.' : 'Đã ẩn điểm với sinh viên.');
+      showToast(newStatus ? 'Đã công bố điểm cho sinh viên.' : 'Đã ẩn điểm với sinh viên.', 'info');
     } catch (err) {
-      alert('Chưa cấu hình API ẩn/hiện điểm (Backend). Vui lòng cấu hình API PUT /classes/:id/publish-grades');
+      console.error('Lỗi toggle publish grades:', err);
+      showToast(err.response?.data?.error || 'Không thể cập nhật cờ công bố điểm. Vui lòng thử lại.', 'error');
     }
   };
 
@@ -585,13 +690,13 @@ function CourseDetail() {
             <div className="tabs-bar">
               <button 
                 className={`tab-button ${activeTab === 'khoahoc' ? 'active' : 'inactive'}`}
-                onClick={() => setActiveTab('khoahoc')}
+                onClick={() => handleTabChange('khoahoc')}
               >
                 Khóa học
               </button>
               <button 
                 className={`tab-button ${activeTab === 'diem' ? 'active' : 'inactive'}`}
-                onClick={() => setActiveTab('diem')}
+                onClick={() => handleTabChange('diem')}
               >
                 Điểm
               </button>
@@ -621,8 +726,8 @@ function CourseDetail() {
                   <div key={chapter.chapter_id || chapter.id || index} className="accordion-item">
                     <div className="accordion-header" onClick={() => toggleSection(index)}>
                       <div className="accordion-header-left">
-                        <span className={`accordion-arrow ${openSections[index] ? 'open' : 'closed'}`}>
-                          {openSections[index] ? '▼' : '▶'}
+                        <span className={`accordion-arrow ${openSections[index] !== false ? 'open' : 'closed'}`}>
+                          {openSections[index] !== false ? '▼' : '▶'}
                         </span>
                         <span className="accordion-title">
                           {chapter.chapter_name || chapter.title || `Chương ${index + 1}`}
@@ -640,7 +745,7 @@ function CourseDetail() {
                     </div>
                     
                     {/* Nội dung xổ xuống nếu mở */}
-                    {openSections[index] && (
+                    {openSections[index] !== false && (
                       <div className="accordion-content">
                         {hasEditingPrivileges && (
                           <div className="teacher-item-actions">
@@ -671,7 +776,7 @@ function CourseDetail() {
                             if (mat.content_link) {
                               window.open(mat.content_link, '_blank');
                             } else {
-                              alert(`Đang tải: ${mat.material_name || mat.title}`);
+                              showToast(`Đang mở tài liệu: ${mat.material_name || mat.title}`, 'info');
                             }
                           }}>
                             <div className="content-row-left">
@@ -807,6 +912,7 @@ function CourseDetail() {
                             <th>Giữa kỳ (<input type="number" style={{width: '35px', background: 'transparent', border: '1px solid #ccc', borderRadius: '4px', textAlign: 'center', fontWeight: 'bold'}} value={midtermWeight} onChange={e => setMidtermWeight(Number(e.target.value))}/>%)</th>
                             <th>Cuối kỳ (<input type="number" style={{width: '35px', background: 'transparent', border: '1px solid #ccc', borderRadius: '4px', textAlign: 'center', fontWeight: 'bold'}} value={finalWeight} onChange={e => setFinalWeight(Number(e.target.value))}/>%)</th>
                             <th>Tổng kết</th>
+                            <th>Ghi chú</th>
                           </tr>
                         </thead>
                         <tbody>
@@ -869,12 +975,22 @@ function CourseDetail() {
                                       {computedTotal.toFixed(2)}
                                     </strong>
                                   </td>
+                                  <td>
+                                    <input 
+                                      type="text" 
+                                      style={{ width: '120px', padding: '4px' }}
+                                      value={g.note ?? ''} 
+                                      onChange={(e) => handleGradeChange(g.student_id, 'note', e.target.value)}
+                                      placeholder="..."
+                                      onClick={(e) => e.stopPropagation()}
+                                    />
+                                  </td>
                                 </tr>
                               );
                             })
                           ) : (
                             <tr>
-                              <td colSpan="8" style={{ textAlign: 'center', padding: '20px', color: '#718096' }}>Chưa có sinh viên nào đăng ký lớp học này.</td>
+                              <td colSpan="9" style={{ textAlign: 'center', padding: '20px', color: '#718096' }}>Chưa có sinh viên nào đăng ký lớp học này.</td>
                             </tr>
                           )}
                         </tbody>
@@ -886,28 +1002,35 @@ function CourseDetail() {
                   <div>
                     <h3>Bảng điểm cá nhân môn học</h3>
                     {studentOwnGrade ? (
-                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '15px', marginTop: '15px' }}>
-                        <div style={{ background: '#f7fafc', padding: '12px', borderRadius: '6px', border: '1px solid #e2e8f0', textAlign: 'center' }}>
-                          <span style={{ fontSize: '12px', color: '#718096' }}>Quiz (10%)</span>
-                          <div style={{ fontSize: '20px', fontWeight: 'bold' }}>{studentOwnGrade.quiz_grade ?? '--'}</div>
+                      <>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '15px', marginTop: '15px' }}>
+                          <div style={{ background: '#f7fafc', padding: '12px', borderRadius: '6px', border: '1px solid #e2e8f0', textAlign: 'center' }}>
+                            <span style={{ fontSize: '12px', color: '#718096' }}>Quiz ({studentOwnGrade.percentage_1 ? (Number(studentOwnGrade.percentage_1) <= 1 ? Math.round(Number(studentOwnGrade.percentage_1) * 100) : Number(studentOwnGrade.percentage_1)) : 10}%)</span>
+                            <div style={{ fontSize: '20px', fontWeight: 'bold' }}>{studentOwnGrade.quiz_grade ?? '--'}</div>
+                          </div>
+                          <div style={{ background: '#f7fafc', padding: '12px', borderRadius: '6px', border: '1px solid #e2e8f0', textAlign: 'center' }}>
+                            <span style={{ fontSize: '12px', color: '#718096' }}>Bài tập ({studentOwnGrade.percentage_2 ? (Number(studentOwnGrade.percentage_2) <= 1 ? Math.round(Number(studentOwnGrade.percentage_2) * 100) : Number(studentOwnGrade.percentage_2)) : 20}%)</span>
+                            <div style={{ fontSize: '20px', fontWeight: 'bold' }}>{studentOwnGrade.assignment_grade ?? '--'}</div>
+                          </div>
+                          <div style={{ background: '#f7fafc', padding: '12px', borderRadius: '6px', border: '1px solid #e2e8f0', textAlign: 'center' }}>
+                            <span style={{ fontSize: '12px', color: '#718096' }}>Giữa kỳ ({studentOwnGrade.percentage_3 ? (Number(studentOwnGrade.percentage_3) <= 1 ? Math.round(Number(studentOwnGrade.percentage_3) * 100) : Number(studentOwnGrade.percentage_3)) : 30}%)</span>
+                            <div style={{ fontSize: '20px', fontWeight: 'bold' }}>{studentOwnGrade.midterm_grade ?? '--'}</div>
+                          </div>
+                          <div style={{ background: '#f7fafc', padding: '12px', borderRadius: '6px', border: '1px solid #e2e8f0', textAlign: 'center' }}>
+                            <span style={{ fontSize: '12px', color: '#718096' }}>Cuối kỳ ({studentOwnGrade.percentage_4 ? (Number(studentOwnGrade.percentage_4) <= 1 ? Math.round(Number(studentOwnGrade.percentage_4) * 100) : Number(studentOwnGrade.percentage_4)) : 40}%)</span>
+                            <div style={{ fontSize: '20px', fontWeight: 'bold' }}>{studentOwnGrade.final_grade ?? '--'}</div>
+                          </div>
+                          <div style={{ background: '#e6fffa', padding: '12px', borderRadius: '6px', border: '1px solid #b2f5ea', textAlign: 'center' }}>
+                            <span style={{ fontSize: '12px', color: '#234e52', fontWeight: 'bold' }}>Điểm Tổng Kết</span>
+                            <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#008b44' }}>{studentOwnGrade.total_grade ?? '--'}</div>
+                          </div>
                         </div>
-                        <div style={{ background: '#f7fafc', padding: '12px', borderRadius: '6px', border: '1px solid #e2e8f0', textAlign: 'center' }}>
-                          <span style={{ fontSize: '12px', color: '#718096' }}>Bài tập (20%)</span>
-                          <div style={{ fontSize: '20px', fontWeight: 'bold' }}>{studentOwnGrade.assignment_grade ?? '--'}</div>
-                        </div>
-                        <div style={{ background: '#f7fafc', padding: '12px', borderRadius: '6px', border: '1px solid #e2e8f0', textAlign: 'center' }}>
-                          <span style={{ fontSize: '12px', color: '#718096' }}>Giữa kỳ (30%)</span>
-                          <div style={{ fontSize: '20px', fontWeight: 'bold' }}>{studentOwnGrade.midterm_grade ?? '--'}</div>
-                        </div>
-                        <div style={{ background: '#f7fafc', padding: '12px', borderRadius: '6px', border: '1px solid #e2e8f0', textAlign: 'center' }}>
-                          <span style={{ fontSize: '12px', color: '#718096' }}>Cuối kỳ (40%)</span>
-                          <div style={{ fontSize: '20px', fontWeight: 'bold' }}>{studentOwnGrade.final_grade ?? '--'}</div>
-                        </div>
-                        <div style={{ background: '#e6fffa', padding: '12px', borderRadius: '6px', border: '1px solid #b2f5ea', textAlign: 'center' }}>
-                          <span style={{ fontSize: '12px', color: '#234e52', fontWeight: 'bold' }}>Điểm Tổng Kết</span>
-                          <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#008b44' }}>{studentOwnGrade.total_grade ?? '--'}</div>
-                        </div>
-                      </div>
+                        {studentOwnGrade.note && (
+                          <div style={{ marginTop: '15px', background: '#fffaf0', padding: '12px', borderRadius: '6px', border: '1px solid #feebc8', color: '#744210' }}>
+                            <strong>Ghi chú từ giảng viên:</strong> {studentOwnGrade.note}
+                          </div>
+                        )}
+                      </>
                     ) : (
                       <p style={{ marginTop: '10px', color: '#666' }}>Chưa có dữ liệu điểm số công bố cho học kỳ này.</p>
                     )}

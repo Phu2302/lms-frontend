@@ -5,10 +5,12 @@ import { getUserClassesAPI } from '../../api/StudentInfo/Profile/users';
 import { getAllClassesAPI, enrollClassAPI, unenrollClassAPI } from '../../api/CourseRegistration/classes';
 import { getAllCoursesAPI } from '../../api/CourseRegistration/courses';
 import { logoutAPI } from '../../api/auth/auth';
+import { useToast } from '../../components/Toast/ToastContext';
 import './CourseRegistration.css';
 
 function CourseRegistration() {
   const navigate = useNavigate();
+  const { showToast } = useToast();
 
   const handleLogout = async () => {
     try {
@@ -150,11 +152,11 @@ function CourseRegistration() {
   const handleEnroll = async (classId) => {
     try {
       await enrollClassAPI(classId);
-      alert('Đăng ký lớp học thành công!');
+      showToast('Đăng ký lớp học thành công!', 'success');
       await reloadRegisteredCourses();
     } catch (err) {
       console.error('Enroll error:', err);
-      alert(err.response?.data?.error || 'Đăng ký thất bại. Lớp học có thể đã đầy hoặc API /classes/enroll chưa được backend cấu hình.');
+      showToast(err.response?.data?.error || 'Đăng ký thất bại. Lớp học có thể đã đầy hoặc API /classes/enroll chưa được backend cấu hình.', 'error');
     }
   };
 
@@ -163,11 +165,11 @@ function CourseRegistration() {
     if (!window.confirm('Bạn có chắc chắn muốn hủy đăng ký lớp học này?')) return;
     try {
       await unenrollClassAPI(classId);
-      alert('Hủy đăng ký lớp học thành công!');
+      showToast('Hủy đăng ký lớp học thành công!', 'info');
       await reloadRegisteredCourses();
     } catch (err) {
       console.error('Unenroll error:', err);
-      alert(err.response?.data?.error || 'Hủy đăng ký thất bại. Vui lòng thử lại sau.');
+      showToast(err.response?.data?.error || 'Hủy đăng ký thất bại. Vui lòng thử lại sau.', 'error');
     }
   };
 
