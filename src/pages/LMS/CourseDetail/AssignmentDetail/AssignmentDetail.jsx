@@ -1,12 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import Header from '../../../../components/Header/Header';
 import { getClassGradesAPI, saveBatchGradesAPI } from '../../../../api/teacher/grades';
 import { useToast } from '../../../../components/Toast/ToastContext';
 import './AssignmentDetail.css';
 
 function AssignmentDetail() {
-  const navigate = useNavigate();
   const { assignmentId } = useParams();
   const { showToast } = useToast();
 

@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <rect width="64" height="64" rx="14" fill="#008b44"/>
+  <!-- Mortarboard / Graduation Cap Icon -->
+  <path d="M32 16L10 27L32 38L54 27L32 16Z" fill="#ffffff"/>
+  <path d="M18 33.5V43.5C18 43.5 24 48 32 48C40 48 46 43.5 46 43.5V33.5L32 40.5L18 33.5Z" fill="#e6fffa"/>
+  <path d="M50 29.5V42" stroke="#ffffff" stroke-width="3" stroke-linecap="round"/>
+  <circle cx="50" cy="43.5" r="2.5" fill="#ffffff"/>
+</svg>

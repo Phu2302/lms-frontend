@@ -35,7 +35,6 @@ function CourseRegistration() {
   // States phục vụ việc tìm kiếm lớp môn học để đăng ký
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
-  const [isSearching, setIsSearching] = useState(false);
   const [searchMessage, setSearchMessage] = useState('Nhập mã hoặc tên môn học để tìm kiếm lớp đăng ký.');
 
   const formatDateTime = (dateStr) => {

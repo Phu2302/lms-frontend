@@ -24,6 +24,10 @@ function LMS({ view }) { // Nhận biến view từ App.jsx gửi sang
   // Lấy thông tin user từ localStorage
   const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
 
+  useEffect(() => {
+    document.title = view === 'courses' ? 'Các khóa học của tôi - BK LMS' : 'Trang chủ - BK LMS';
+  }, [view]);
+
   // Gọi API lấy danh sách classes khi vào tab Courses
   useEffect(() => {
     if (view === 'courses') {

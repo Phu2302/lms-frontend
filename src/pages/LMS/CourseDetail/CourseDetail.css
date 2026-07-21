@@ -17,7 +17,46 @@
   font-size: 24px;
   font-weight: bold;
   line-height: 1.4;
-  margin-bottom: 25px;
+  margin-bottom: 5px;
+}
+
+.faculty-subtitle {
+  font-size: 14px;
+  color: #666666;
+  margin-bottom: 20px;
+  font-style: italic;
+}
+
+.back-to-courses-btn {
+  margin-bottom: 15px;
+  cursor: pointer;
+  padding: 5px 10px;
+  background: #fff;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+.loading-indicator {
+  text-align: center;
+  padding: 40px;
+  color: #666;
+}
+
+.error-banner {
+  text-align: center;
+  padding: 20px;
+  color: #c00;
+  background: #fee;
+  border-radius: 8px;
+  margin: 10px 0;
+}
+
+.retry-btn {
+  margin-top: 10px;
+  padding: 6px 16px;
+  cursor: pointer;
+  border: 1px solid #ccc;
+  border-radius: 4px;
 }
 
 /* Thanh chứa các nút Tab (Khóa học / Điểm) */

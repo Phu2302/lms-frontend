@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { getSemestersAPI } from '../../../api/LMS/Schedule/semesters';
 import { getMySchedulesAPI } from '../../../api/LMS/Schedule/schedules';
 import Header from '../../../components/Header/Header';
@@ -57,16 +56,12 @@ const getAvailableWeeks = (sem) => {
 };
 
 function Schedule() {
-  const navigate = useNavigate();
-
   const [schedules, setSchedules] = useState([]);
   const [semesters, setSemesters] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [currentWeek, setCurrentWeek] = useState(1);
   const [selectedSemester, setSelectedSemester] = useState(null);
-
-  const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
 
   useEffect(() => {
     fetchData();
@@ -371,7 +366,6 @@ function Schedule() {
                         {slotTime ? `${slotTime.start}` : ''}
                       </td>
                       {DAY_NUMBERS.map((dayNum, index) => {
-                        const items = getScheduleForDaySlot(dayNum, slot);
                         const dateObj = weekDates[index];
                         const isToday = dateObj ? (
                           dateObj.getDate() === new Date().getDate() &&
@@ -379,23 +373,73 @@ function Schedule() {
                           dateObj.getFullYear() === new Date().getFullYear()
                         ) : false;
 
+                        // Check if covered by a previous slot (start_slot < slot)
+                        const coveredByPrev = weekSchedules.find(s =>
+                          Number(s.day_of_week) === Number(dayNum) &&
+                          Number(s.start_slot) < slot &&
+                          Number(s.end_slot) >= slot
+                        );
+
+                        if (coveredByPrev) {
+                          // Already rendered in start_slot rowSpan, skip td
+                          return null;
+                        }
+
+                        // Check items starting at this slot
+                        const startingItems = weekSchedules.filter(s =>
+                          Number(s.day_of_week) === Number(dayNum) &&
+                          Number(s.start_slot) === slot
+                        );
+
+                        if (startingItems.length > 0) {
+                          const firstItem = startingItems[0];
+                          const rowSpanVal = (Number(firstItem.end_slot) - Number(firstItem.start_slot)) + 1;
+
+                          return (
+                            <td
+                              key={dayNum}
+                              rowSpan={rowSpanVal > 1 ? rowSpanVal : 1}
+                              className={`schedule-cell merged-cell ${isToday ? 'today-cell' : ''}`}
+                              style={{ verticalAlign: 'middle' }}
+                            >
+                              {startingItems.map((item, idx) => (
+                                <div
+                                  key={idx}
+                                  className="schedule-item merged-item-card"
+                                  style={{
+                                    backgroundColor: getColorForClass(item.class_id),
+                                    height: '100%',
+                                    minHeight: `${rowSpanVal * 40}px`,
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    justifyContent: 'center',
+                                  }}
+                                  title={`Phòng: ${item.room_name || 'N/A'} | Lớp: ${item.class_id} | Tiết ${item.start_slot}-${item.end_slot}`}
+                                >
+                                  <div className="schedule-item-class" style={{ fontWeight: 'bold' }}>
+                                    {item.course_name || 'Khóa học'}
+                                  </div>
+                                  {item.course_code && (
+                                    <div style={{ fontSize: '11px', fontWeight: 'bold', opacity: 0.9 }}>
+                                      {item.course_code}
+                                    </div>
+                                  )}
+                                  <div style={{ fontSize: '11px', opacity: 0.9 }}>
+                                    Tiết {item.start_slot} - {item.end_slot}
+                                  </div>
+                                  {item.room_name && (
+                                    <div className="schedule-item-room">📍 {item.room_name}</div>
+                                  )}
+                                </div>
+                              ))}
+                            </td>
+                          );
+                        }
+
+                        // Empty cell
                         return (
                           <td key={dayNum} className={`schedule-cell ${isToday ? 'today-cell' : ''}`}>
-                            {items.map((item, idx) => (
-                              <div
-                                key={idx}
-                                className="schedule-item"
-                                style={{
-                                  backgroundColor: getColorForClass(item.class_id),
-                                }}
-                                title={`Phòng: ${item.room_name || 'N/A'} | Lớp: ${item.class_id}`}
-                              >
-                                <div className="schedule-item-class">Lớp {item.class_id}</div>
-                                {item.room_name && (
-                                  <div className="schedule-item-room">📍 {item.room_name}</div>
-                                )}
-                              </div>
-                            ))}
+                            <span style={{ color: '#e2e8f0' }}>-</span>
                           </td>
                         );
                       })}

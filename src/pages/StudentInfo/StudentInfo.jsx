@@ -5,6 +5,7 @@ import { logoutAPI } from '../../api/auth/auth';
 import ExamSchedule from './ExamSchedule/ExamSchedule';
 import ServiceStudent from './ServiceStudent/ServiceStudent';
 import Scoreboard from './Scoreboard/Scoreboard';
+import Timetable from './Timetable/Timetable';
 import { useToast } from '../../components/Toast/ToastContext';
 import './StudentInfo.css';
 
@@ -14,9 +15,19 @@ function StudentInfo() {
   const [searchParams, setSearchParams] = useSearchParams();
   const { showToast } = useToast();
 
-  // Tab con hoạt động: 'info', 'exam', 'scoreboard' hoặc 'service'
   const initialTab = searchParams.get('tab') || location.state?.defaultTab || 'info';
   const [activeSubTab, setActiveSubTab] = useState(initialTab);
+
+  useEffect(() => {
+    const titles = {
+      info: 'Thông tin sinh viên - BK LMS',
+      service: 'Đăng ký in giấy xác nhận - BK LMS',
+      exam: 'Lịch thi sinh viên - BK LMS',
+      scoreboard: 'Bảng điểm sinh viên - BK LMS',
+      schedule: 'Thời khóa biểu sinh viên - BK LMS'
+    };
+    document.title = titles[activeSubTab] || 'Thông tin sinh viên - BK LMS';
+  }, [activeSubTab]);
 
   const handleSubTabChange = (tabName) => {
     setActiveSubTab(tabName);
@@ -102,7 +113,10 @@ function StudentInfo() {
           >
             Lịch thi
           </button>
-          <button className="nav-tab-btn" onClick={() => navigate('/lms/schedule')}>
+          <button 
+            className={`nav-tab-btn ${activeSubTab === 'schedule' ? 'active' : ''}`} 
+            onClick={() => handleSubTabChange('schedule')}
+          >
             Thời khoá biểu
           </button>
         </div>
@@ -126,6 +140,12 @@ function StudentInfo() {
               ☰ Sinh viên
             </button>
             <button 
+              className={`sidebar-item-btn ${activeSubTab === 'schedule' ? 'active' : ''}`}
+              onClick={() => handleSubTabChange('schedule')}
+            >
+              ☰ Thời khóa biểu
+            </button>
+            <button 
               className={`sidebar-item-btn ${activeSubTab === 'service' ? 'active' : ''}`}
               onClick={() => handleSubTabChange('service')}
             >
@@ -133,7 +153,7 @@ function StudentInfo() {
             </button>
             <button 
               className={`sidebar-item-btn ${activeSubTab === 'scoreboard' ? 'active' : ''}`}
-              onClick={() => setActiveSubTab('scoreboard')}
+              onClick={() => handleSubTabChange('scoreboard')}
             >
               ☰ Bảng điểm
             </button>
@@ -193,7 +213,7 @@ function StudentInfo() {
 
                     <div className="info-field-item">
                       <span className="info-field-label">Tên</span>
-                      <span className="info-field-value">{studentData.first_name || studentData.ten || 'N/A'}</span>
+                      <span className="info-field-value">{studentData.first_name || studentData.ten || studentData.user_name || 'N/A'}</span>
                     </div>
 
                     <div className="info-field-item">
@@ -203,7 +223,7 @@ function StudentInfo() {
 
                     <div className="info-field-item">
                       <span className="info-field-label">Giới tính</span>
-                      <span className="info-field-value">{studentData.gender || studentData.gioiTinh || 'N/A'}</span>
+                      <span className="info-field-value">{studentData.gender || 'N/A'}</span>
                     </div>
 
                     {/* HÀNG 2 */}
@@ -224,12 +244,12 @@ function StudentInfo() {
 
                     <div className="info-field-item">
                       <span className="info-field-label">Quê quán</span>
-                      <span className="info-field-value">{studentData.hometown || studentData.queQuan || 'N/A'}</span>
+                      <span className="info-field-value">{studentData.address || studentData.hometown || studentData.queQuan || 'N/A'}</span>
                     </div>
 
                     <div className="info-field-item">
                       <span className="info-field-label">Trạng thái</span>
-                      <span className="style" style={{ color: '#008b44', fontWeight: 'bold' }}>
+                      <span className="info-field-value" style={{ color: '#008b44', fontWeight: 'bold' }}>
                         {studentData.status || 'Đang học'}
                       </span>
                     </div>
@@ -256,6 +276,8 @@ function StudentInfo() {
 
             </div>
           </div>
+          ) : activeSubTab === 'schedule' ? (
+            <Timetable />
           ) : activeSubTab === 'exam' ? (
             <ExamSchedule />
           ) : activeSubTab === 'service' ? (

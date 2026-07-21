@@ -14,6 +14,10 @@ function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
+  useEffect(() => {
+    document.title = 'Đăng Nhập - BK LMS';
+  }, []);
+
   // Nếu đã có JWT token → tự động chuyển hướng, không cần đăng nhập lại
   useEffect(() => {
     const token = localStorage.getItem('token');
