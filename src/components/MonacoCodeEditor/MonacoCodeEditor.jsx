@@ -20,10 +20,11 @@ function MonacoCodeEditor({
   const [MonacoEditor, setMonacoEditor] = useState(null);
 
   useEffect(() => {
-    // Dynamically import @monaco-editor/react
-    import('@monaco-editor/react')
+    // Dynamically import @monaco-editor/react without breaking Vite import analysis
+    const pkgName = '@monaco-editor/react';
+    import(/* @vite-ignore */ pkgName)
       .then((mod) => {
-        setMonacoEditor(() => mod.default);
+        setMonacoEditor(() => mod.default || mod);
       })
       .catch((err) => {
         console.warn('Monaco Editor load error, using fallback code editor:', err);
