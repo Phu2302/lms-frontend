@@ -1,0 +1,232 @@
+/* QuizForm.css */
+.quiz-advanced-config-card {
+  background: #f7fafc;
+  padding: 16px 20px;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  margin: 15px 0;
+}
+
+.advanced-config-title {
+  margin: 0 0 12px 0;
+  color: #2b6cb0;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.questions-section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.section-title-text {
+  margin: 0;
+  color: #2d3748;
+  font-size: 18px;
+}
+
+.import-csv-btn {
+  background-color: #2c7a7b;
+  color: #ffffff;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background-color 0.2s;
+}
+
+.import-csv-btn:hover {
+  background-color: #234e52;
+}
+
+.empty-questions-notice {
+  text-align: center;
+  color: #718096;
+  padding: 30px;
+  border: 2px dashed #cbd5e0;
+  border-radius: 8px;
+  margin: 16px 0;
+  background: #faf5ff;
+}
+
+.question-editor-card {
+  background: #f8fafc;
+  border: 1.5px solid #cbd5e0;
+  border-radius: 10px;
+  padding: 18px;
+  margin-bottom: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.question-editor-card.dragging {
+  opacity: 0.5;
+  border-style: dashed;
+  background: #ebf8ff;
+}
+
+.question-card-topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.drag-handle-icon {
+  cursor: grab;
+  font-size: 18px;
+  color: #a0aec0;
+  user-select: none;
+}
+
+.drag-handle-icon:active {
+  cursor: grabbing;
+}
+
+.btn-order-step {
+  background: #edf2f7;
+  border: 1px solid #cbd5e0;
+  border-radius: 4px;
+  padding: 3px 8px;
+  cursor: pointer;
+  font-size: 12px;
+  color: #4a5568;
+}
+
+.btn-order-step:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.btn-delete-q {
+  background: transparent;
+  border: none;
+  color: #e53e3e;
+  cursor: pointer;
+  font-weight: bold;
+  font-size: 13px;
+}
+
+.btn-delete-q:hover {
+  text-decoration: underline;
+}
+
+.modern-select {
+  padding: 8px 12px;
+  border-radius: 6px;
+  border: 1px solid #cbd5e0;
+  background-color: #fff;
+  font-size: 14px;
+  color: #2d3748;
+}
+
+.image-preview-wrapper {
+  margin-top: 8px;
+  max-width: 300px;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.q-preview-img {
+  width: 100%;
+  max-height: 180px;
+  object-fit: contain;
+  background: #f7fafc;
+}
+
+.mcq-options-container {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: #ffffff;
+  padding: 14px;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+}
+
+.mcq-option-editor-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 10px;
+  border-radius: 6px;
+  border: 1px solid transparent;
+}
+
+.mcq-option-editor-row.is-correct-selected {
+  background-color: #f0fff4;
+  border-color: #9ae6b4;
+}
+
+.option-text-input {
+  flex: 1;
+  padding: 6px 12px;
+  font-size: 14px;
+  border: 1px solid #cbd5e0;
+  border-radius: 4px;
+}
+
+.code-editor-block {
+  background: #1a202c;
+  padding: 14px;
+  border-radius: 8px;
+}
+
+.code-editor-block label {
+  color: #90cdf4 !important;
+}
+
+.code-textarea-editor {
+  width: 100%;
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 13px;
+  line-height: 1.5;
+  background-color: #2d3748;
+  color: #f7fafc;
+  border: 1px solid #4a5568;
+  border-radius: 6px;
+  padding: 12px;
+  resize: vertical;
+  tab-size: 4;
+}
+
+/* CSV Modal */
+.csv-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.csv-modal-box {
+  background: #ffffff;
+  padding: 24px;
+  border-radius: 12px;
+  width: 90%;
+  max-width: 650px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+}
+
+.csv-input-area {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid #cbd5e0;
+  border-radius: 8px;
+  font-family: monospace;
+  font-size: 13px;
+  resize: vertical;
+}

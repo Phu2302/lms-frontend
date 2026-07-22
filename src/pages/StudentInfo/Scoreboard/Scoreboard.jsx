@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { getUserClassesAPI } from '../../../api/StudentInfo/Profile/users';
 import { getStudentClassGradeAPI } from '../../../api/StudentInfo/Scoreboard/grades';
+import { useAuth } from '../../../contexts/AuthContext';
 import './Scoreboard.css';
 
 // Helper quy đổi từ Thang điểm 10 sang Thang điểm 4
@@ -32,6 +33,7 @@ const getLetterGrade = (score) => {
 };
 
 function Scoreboard() {
+  const { user } = useAuth();
   const [semesterGrades, setSemesterGrades] = useState([]);
   const [overallSummary, setOverallSummary] = useState({ gpa10: '0.00', gpa4: '0.00', passedCredits: 0, registeredCredits: 0 });
   const [isLoading, setIsLoading] = useState(true);
@@ -39,8 +41,8 @@ function Scoreboard() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCourseForModal, setSelectedCourseForModal] = useState(null);
 
-  // Lấy thông tin sinh viên từ localStorage
-  const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
+  // Lấy thông tin sinh viên từ AuthContext hoặc localStorage
+  const currentUser = user || JSON.parse(localStorage.getItem('user') || '{}');
   const studentName = `${currentUser.user_name?.toUpperCase() || 'SINH VIÊN'} (${currentUser.user_id || ''})`;
 
   useEffect(() => {

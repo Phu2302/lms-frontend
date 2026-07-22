@@ -1,0 +1,104 @@
+/* TestCasesTable.css */
+.testcases-table-wrapper {
+  padding: 16px;
+  border-radius: 8px;
+  margin-top: 14px;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.testcases-table-wrapper.all-passed-bg {
+  background-color: #a8f5a5;
+  border: 1px solid #7ede7a;
+}
+
+.testcases-table-wrapper.has-failed-bg {
+  background-color: #f8d7da;
+  border: 1px solid #f5c6cb;
+}
+
+.testcases-custom-table {
+  width: 100%;
+  border-collapse: collapse;
+  background-color: #ffffff;
+  border: 1px solid #d0d0d0;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.testcases-custom-table th {
+  background-color: #f0f0f2;
+  color: #222222;
+  font-weight: 700;
+  font-size: 14px;
+  padding: 10px 12px;
+  text-align: left;
+  border: 1px solid #d0d0d0;
+}
+
+.testcases-custom-table td {
+  padding: 8px 12px;
+  font-size: 13px;
+  border: 1px solid #e0e0e0;
+  color: #222222;
+  vertical-align: middle;
+}
+
+.testcases-custom-table tr:nth-child(even) {
+  background-color: #fcfcfc;
+}
+
+.code-font-cell {
+  font-family: 'Courier New', Courier, monospace, 'Consolas';
+  font-size: 13px;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+.expected-cell {
+  color: #1b5e20;
+}
+
+.output-success {
+  color: #2e7d32;
+}
+
+.output-failed {
+  color: #c62828;
+  font-weight: 600;
+}
+
+.testcases-summary-bar {
+  margin-top: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.progress-pill-track {
+  width: 100%;
+  height: 10px;
+  background-color: #e0e0e0;
+  border-radius: 5px;
+  overflow: hidden;
+}
+
+.progress-pill-fill {
+  height: 100%;
+  border-radius: 5px;
+  transition: width 0.4s ease;
+}
+
+.progress-pill-fill.fill-success {
+  background-color: #555555;
+}
+
+.progress-pill-fill.fill-warning {
+  background-color: #dc3545;
+}
+
+.summary-status-text {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}

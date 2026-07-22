@@ -12,12 +12,19 @@ import {
 import { getStudentQuestionResponsesAPI, submitBulkResponsesAPI } from "../../../../api/LMS/CourseDetail/studentQuestionResponses";
 import Header from "../../../../components/Header/Header";
 import { useToast } from "../../../../components/Toast/ToastContext";
+import { useAuth } from "../../../../contexts/AuthContext";
 import "./QuizPage.css";
 
 function QuizPage() {
   const navigate = useNavigate();
   const { quizId } = useParams();
   const { showToast } = useToast();
+
+  // Sử dụng useAuth hook linh hoạt kèm fallback localStorage
+  const auth = useAuth ? useAuth() : {};
+  const currentUser = auth.user || JSON.parse(localStorage.getItem("user") || "{}");
+  const userRole = currentUser?.role ? String(currentUser.role) : "1";
+  const isTeacher = userRole === "2" || userRole === "3";
 
   // Sidebar state
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
@@ -44,18 +51,13 @@ function QuizPage() {
   // States for Landing page & Attempt history
   const [isStarted, setIsStarted] = useState(false);
   const [pastEntries, setPastEntries] = useState([]);
-  const [allEntries, setAllEntries] = useState([]); // Dành cho Giảng viên xem tất cả lượt làm
+  const [allEntries, setAllEntries] = useState([]);
   const [selectedReviewEntry, setSelectedReviewEntry] = useState(null);
   const [reviewResponses, setReviewResponses] = useState([]);
 
   // Manual grading state
   const [manualScores, setManualScores] = useState({});
   const [savingManualScore, setSavingManualScore] = useState(false);
-
-  // Lấy thông tin user
-  const currentUser = JSON.parse(localStorage.getItem("user") || "{}");
-  const userRole = currentUser?.role ? String(currentUser.role) : "1";
-  const isTeacher = userRole === "2" || userRole === "3";
 
   // Load quiz data và lịch sử khi mount
   useEffect(() => {
@@ -147,7 +149,6 @@ function QuizPage() {
 
   const shuffleQuestionsAndOptions = (qList) => {
     if (!qList || qList.length === 0) return [];
-    // Fisher-Yates Shuffle
     const shuffledQ = [...qList].sort(() => Math.random() - 0.5);
     return shuffledQ.map(q => {
       if (q.options && q.options.length > 0) {
@@ -166,7 +167,7 @@ function QuizPage() {
     }
     try {
       await deleteQuizEntryAPI(entryIdToDelete);
-      showToast(`Đã xóa lượt thi #${entryIdToDelete} thành công! Sinh viên có thể làm lại bài thi.`, 'success');
+      showToast(`Đã xóa lượt thi #${entryIdToDelete} thành công!`, 'success');
       fetchAllEntries();
       fetchPastEntries();
     } catch (err) {
@@ -185,8 +186,8 @@ function QuizPage() {
     let csvContent = "\uFEFFLuot_Thi_ID,MSSV,Thoi_Gian_Bat_Dau,Diem_So,Trang_Thai\n";
     dataToExport.forEach(e => {
       const scoreStr = e.entry_score !== null && e.entry_score !== undefined ? Number(e.entry_score).toFixed(2) : "Dang lam do";
-      const status = e.entry_score !== null && e.entry_score !== undefined ? (Number(e.entry_score) >= 5 ? "Dat" : "Chua dat") : "Chua nop";
-      csvContent += `${e.entry_id},${e.student_id || currentUser.user_id},"${formatDate(e.entry_start_time)}",${scoreStr},${status}\n`;
+      const status = e.entry_score !== null && e.entry_score !== undefined ? (Number(e.entry_score) >= 4 ? "Dat" : "Chua dat") : "Chua nop";
+      csvContent += `${e.entry_id},${e.student_id || currentUser.user_id},"${new Date(e.entry_start_time).toLocaleString('vi-VN')}",${scoreStr},${status}\n`;
     });
 
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
@@ -238,7 +239,6 @@ function QuizPage() {
         time_limit: quizData?.time_limit || 30
       });
 
-      // Kiểm tra cấu hình trộn đề ngẫu nhiên (shuffle_questions)
       if (quizData?.shuffle_questions !== false) {
         setQuestions(shuffleQuestionsAndOptions(quizData?.questions || []));
       }
@@ -271,7 +271,7 @@ function QuizPage() {
           try {
             ansVal = JSON.parse(ansVal);
           } catch(e) {}
-          savedAnswers[questionIdx] = isNaN(ansVal) ? ansVal : Number(ansVal);
+          savedAnswers[questionIdx] = ansVal;
         }
       });
       setAnswers(savedAnswers);
@@ -326,7 +326,6 @@ function QuizPage() {
   };
 
   const handleOptionChange = (optionIndex) => {
-    // Lưu option_index thật của option (1-based, không phụ thuộc vị trí visual sau shuffle)
     const updatedAnswers = {
       ...answers,
       [currentIndex]: optionIndex,
@@ -447,7 +446,6 @@ function QuizPage() {
   const currentQuestion = questions[currentIndex];
   const unsubmittedEntry = pastEntries.find(e => e.entry_score === null);
 
-  // Kiểm tra quyền xem đáp án chuẩn của Sinh viên
   const showAnswersMode = quizData?.show_answers_mode || 'AFTER_DEADLINE';
   const isDeadlinePassed = !quizData?.deadline_time || new Date() >= new Date(quizData.deadline_time);
   const canSeeCorrectAnswers = isTeacher || showAnswersMode === 'ALWAYS' || (showAnswersMode === 'AFTER_DEADLINE' && isDeadlinePassed);
@@ -461,85 +459,47 @@ function QuizPage() {
     return (
       <div className="quiz-container">
         <Header view="courses" />
-
         <div className="quiz-body" style={{ justifyContent: "center", alignItems: "center" }}>
-          <div className="quiz-result-card" style={{
-            background: "#fff",
-            borderRadius: "16px",
-            padding: "48px 40px",
-            textAlign: "center",
-            maxWidth: "480px",
-            width: "100%",
-            boxShadow: "0 4px 24px rgba(0,0,0,0.12)",
-            border: "1px solid #008b44"
-          }}>
-            <div style={{ fontSize: "72px", marginBottom: "16px" }}>
-              {percentage >= 80 ? "🏆" : percentage >= 60 ? "✅" : "📝"}
+          <div className="quiz-result-card" style={{ background: "#fff", borderRadius: "16px", padding: "48px 40px", textAlign: "center", maxWidth: "550px", width: "90%", boxShadow: "0 10px 40px rgba(0,0,0,0.1)", border: "1px solid #e2e8f0" }}>
+            <div style={{ fontSize: "56px", marginBottom: "16px" }}>
+              {percentage >= 50 ? "🎉" : "📚"}
             </div>
-            <h2 style={{ fontSize: "24px", fontWeight: "700", marginBottom: "8px", color: "#005a2b" }}>
-              Nộp bài thành công!
+            <h2 style={{ color: "#005a2b", margin: "0 0 8px 0", fontSize: "24px" }}>
+              {percentage >= 50 ? "Hoàn thành xuất sắc!" : "Đã nộp bài làm"}
             </h2>
-            <p style={{ color: "#666", marginBottom: "32px" }}>
-              {quizData?.title || "Quiz"}
+            <p style={{ color: "#718096", margin: "0 0 24px 0", fontSize: "14px" }}>
+              {quizData?.title || "Bài thi Trắc nghiệm"}
             </p>
-
-            <div style={{
-              background: percentage >= 80 ? "#e8f5e9" : percentage >= 60 ? "#fff3e0" : "#fce4ec",
-              borderRadius: "12px",
-              padding: "24px",
-              marginBottom: "24px"
-            }}>
-              <div style={{ fontSize: "48px", fontWeight: "800", color: percentage >= 80 ? "#2e7d32" : percentage >= 60 ? "#e65100" : "#c62828" }}>
-                {formatScore(result.total_score)} / {formatScore(result.max_score)}
+            <div style={{ background: "#f7fafc", borderRadius: "12px", padding: "24px", marginBottom: "28px", border: "1px solid #edf2f7" }}>
+              <div style={{ fontSize: "42px", fontWeight: "800", color: percentage >= 50 ? "#008b44" : "#e53e3e", marginBottom: "4px" }}>
+                {Number(result.total_score).toFixed(2)} <span style={{ fontSize: "20px", color: "#a0aec0", fontWeight: "normal" }}>/ {result.max_score}</span>
               </div>
-              <div style={{ fontSize: "16px", color: "#555", marginTop: "8px" }}>
-                Đạt {percentage}% • {result.answers_count} câu đã trả lời
+              <div style={{ fontSize: "14px", fontWeight: "600", color: "#4a5568" }}>
+                Tỷ lệ chính xác: {percentage}%
               </div>
             </div>
-
-            <div style={{ display: "flex", gap: "12px", justifyContent: "center" }}>
-              <button
-                onClick={() => {
-                  setResult(null);
-                  setIsStarted(false);
-                  initQuiz();
-                }}
-                className="quiz-btn quiz-btn-primary"
-              >
-                Về trang lịch sử thi
-              </button>
-            </div>
+            <button className="quiz-btn quiz-btn-primary" style={{ width: "100%", padding: "14px", fontSize: "15px" }} onClick={() => { setResult(null); setIsStarted(false); initQuiz(); }}>
+              Quay lại trang chi tiết Quiz
+            </button>
           </div>
         </div>
       </div>
     );
   }
 
-  // 2. Hiển thị lỗi tải Quiz (Error Layer)
+  // 2. Màn hình báo lỗi
   if (error) {
     return (
       <div className="quiz-container">
         <Header view="courses" />
         <div className="quiz-body" style={{ justifyContent: "center", alignItems: "center" }}>
-          <div style={{
-            textAlign: "center",
-            background: "#fff",
-            padding: "40px",
-            borderRadius: "12px",
-            maxWidth: "400px",
-            border: "1px solid #c62828",
-            boxShadow: "0 4px 20px rgba(0,0,0,0.08)"
-          }}>
+          <div style={{ textAlign: "center", background: "#fff", padding: "40px", borderRadius: "12px", maxWidth: "400px", border: "1px solid #c62828" }}>
             <div style={{ fontSize: "48px", marginBottom: "16px" }}>❌</div>
             <h3 style={{ color: "#c62828", marginBottom: "12px" }}>Không thể tải quiz</h3>
             <p style={{ color: "#666", marginBottom: "20px" }}>{error}</p>
             <div style={{ display: "flex", gap: "12px", justifyContent: "center" }}>
-              <button onClick={() => navigate(-1)} className="quiz-btn quiz-btn-secondary">
-                ← Quay lại
-              </button>
-              <button onClick={initQuiz} className="quiz-btn quiz-btn-primary">
-                Thử lại
-              </button>
+              <button onClick={() => navigate(-1)} className="quiz-btn quiz-btn-secondary">← Quay lại</button>
+              <button onClick={initQuiz} className="quiz-btn quiz-btn-primary">Thử lại</button>
             </div>
           </div>
         </div>
@@ -547,12 +507,11 @@ function QuizPage() {
     );
   }
 
-  // 3. Hiển thị trang Xem lại bài (Review Layer)
+  // 3. Màn hình Xem lại bài (Review Layer)
   if (selectedReviewEntry) {
     return (
       <div className="quiz-container">
         <Header view="courses" />
-
         <div className="quiz-body" style={{ display: "block" }}>
           <div className="quiz-landing-container" style={{ maxWidth: "900px" }}>
             <div className="review-question-header">
@@ -569,7 +528,6 @@ function QuizPage() {
               </div>
             </div>
 
-            {/* THÔNG BÁO BẢO MẬT ĐÁP ÁN DÀNH CHO SINH VIÊN */}
             {!canSeeCorrectAnswers && (
               <div style={{ background: '#fffaf0', border: '1.5px solid #fbd38d', borderRadius: '8px', padding: '14px 18px', margin: '20px 0', color: '#c05621', fontSize: '14px', display: 'flex', alignItems: 'center', gap: '10px' }}>
                 <span style={{ fontSize: '20px' }}>🔒</span>
@@ -588,11 +546,9 @@ function QuizPage() {
                 const response = reviewResponses.find(r => Number(r.question_id) === Number(q.question_id));
                 const studentAnswer = response ? response.student_answer : null;
                 const isCorrect = response ? Number(response.achieved_score) > 0 : false;
-
                 const correctIndexes = canSeeCorrectAnswers && q.correct_answer_indexes
                   ? (Array.isArray(q.correct_answer_indexes) ? q.correct_answer_indexes : [q.correct_answer_indexes]).map(Number)
                   : [];
-
                 const isEssayOrCode = !q.options || q.options.length === 0;
 
                 return (
@@ -622,11 +578,7 @@ function QuizPage() {
 
                         return (
                           <div key={opt.option_id || optIdx} className={optionClass} style={{ pointerEvents: "none" }}>
-                            <input
-                              type="radio"
-                              disabled
-                              checked={isStudentSelected}
-                            />
+                            <input type="radio" disabled checked={isStudentSelected} />
                             {String.fromCharCode(65 + optIdx)}. {opt.text_content}
                           </div>
                         );
@@ -635,36 +587,19 @@ function QuizPage() {
                       {isEssayOrCode && (
                         <div style={{ marginTop: "10px" }}>
                           <div style={{ fontWeight: "bold", fontSize: "14px", color: "#666" }}>Câu trả lời của sinh viên:</div>
-                          <div style={{
-                            padding: "10px 15px",
-                            background: "#f9f9f9",
-                            border: "1px solid #ddd",
-                            borderRadius: "6px",
-                            margin: "5px 0 10px 0",
-                            fontStyle: "italic",
-                            whiteSpace: "pre-wrap"
-                          }}>
+                          <div style={{ padding: "10px 15px", background: "#f9f9f9", border: "1px solid #ddd", borderRadius: "6px", margin: "5px 0 10px 0", fontStyle: "italic", whiteSpace: "pre-wrap" }}>
                             {studentAnswer || "(Trống)"}
                           </div>
 
                           {canSeeCorrectAnswers && q.short_answer_key && (
                             <>
                               <div style={{ fontWeight: "bold", fontSize: "14px", color: "#2e7d32" }}>Đáp án gợi ý:</div>
-                              <div style={{
-                                padding: "10px 15px",
-                                background: "#e8f5e9",
-                                border: "1.5px dashed #81c784",
-                                borderRadius: "6px",
-                                margin: "5px 0 10px 0",
-                                fontWeight: "bold",
-                                color: "#2e7d32"
-                              }}>
+                              <div style={{ padding: "10px 15px", background: "#e8f5e9", border: "1.5px dashed #81c784", borderRadius: "6px", margin: "5px 0 10px 0", fontWeight: "bold", color: "#2e7d32" }}>
                                 {q.short_answer_key}
                               </div>
                             </>
                           )}
 
-                          {/* KHUNG GIẢNG VIÊN CHẤM ĐIỂM THỦ CÔNG CHO CÂU TỰ LUẬN */}
                           {isTeacher && response && (
                             <div style={{ background: '#edf2f7', padding: '12px 15px', borderRadius: '6px', border: '1px solid #cbd5e0', marginTop: '10px', display: 'flex', alignItems: 'center', gap: '10px' }}>
                               <span style={{ fontSize: '13px', fontWeight: 'bold', color: '#2d3748' }}>✍️ Chấm điểm thủ công:</span>
@@ -705,7 +640,7 @@ function QuizPage() {
     );
   }
 
-  // 4. Hiển thị màn hình Chi tiết Quiz & Lịch sử thi (Landing Layer)
+  // 4. Màn hình Chi tiết Quiz & Lịch sử thi (Landing Layer)
   if (!isStarted) {
     const totalAttempts = pastEntries.length;
     const canAttempt = !unsubmittedEntry && (quizData?.max_entry === 0 || totalAttempts < (quizData?.max_entry || 99));
@@ -713,7 +648,6 @@ function QuizPage() {
     return (
       <div className="quiz-container">
         <Header view="courses" />
-
         {loading && (
           <div className="quiz-body" style={{ justifyContent: "center", alignItems: "center" }}>
             <div style={{ textAlign: "center", color: "#666" }}>
@@ -759,7 +693,6 @@ function QuizPage() {
                 </div>
               </div>
 
-              {/* BẢNG THỐNG KÊ PHỔ ĐIỂM (DÀNH CHO GIẢNG VIÊN) */}
               {isTeacher && (
                 <div style={{ background: '#ebf8ff', border: '1px solid #bee3f8', borderRadius: '12px', padding: '20px', marginBottom: '25px' }}>
                   <h3 style={{ margin: '0 0 15px 0', color: '#2b6cb0', fontSize: '16px' }}>📊 Thống kê Phổ điểm & Phân tích lớp học</h3>
@@ -784,7 +717,6 @@ function QuizPage() {
                 </div>
               )}
 
-              {/* BẢNG QUẢN LÝ DÀNH CHO GIẢNG VIÊN (Nếu userRole == '2' hoặc '3') */}
               {isTeacher && (
                 <div className="quiz-history-section" style={{ background: '#f8fafc', padding: '20px', borderRadius: '12px', border: '1px solid #cbd5e0', marginBottom: '25px' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
@@ -841,7 +773,6 @@ function QuizPage() {
                 </div>
               )}
 
-              {/* Bảng lịch sử các lượt làm bài CÁ NHÂN */}
               <div className="quiz-history-section">
                 <h3>Lịch sử thi cá nhân của bạn</h3>
                 {pastEntries.length === 0 ? (
@@ -886,7 +817,6 @@ function QuizPage() {
                 )}
               </div>
 
-              {/* Nút thao tác chính */}
               <div style={{ display: "flex", gap: "12px", justifyContent: "flex-start", marginTop: "20px" }}>
                 <button className="quiz-btn quiz-btn-secondary" onClick={handleBackToCourse}>
                   ← Quay lại lớp học
@@ -913,20 +843,16 @@ function QuizPage() {
     );
   }
 
-  // 5. Hiển thị Màn hình làm bài (Active Quiz View)
+  // 5. Màn hình Làm bài trực tiếp (Active Quiz View)
   const isTimeWarning = remainingSeconds !== null && remainingSeconds <= 300;
   const isTimeUrgent = remainingSeconds !== null && remainingSeconds <= 60;
 
   return (
     <div className="quiz-container">
       <Header view="courses" />
-
-      {/* Quiz content */}
       {!loading && !error && currentQuestion && (
         <div className="quiz-body">
-          {/* KHỐI TRÁI: KHU VỰC ĐỌC ĐỀ VÀ TRẢ LỜI CÂU HỎI */}
           <div className="quiz-left-content">
-            {/* STICKY COUNTDOWN TIMER BANNER */}
             <div style={{
               background: isTimeUrgent ? '#fff5f5' : isTimeWarning ? '#fffaf0' : '#f0fff4',
               border: `1.5px solid ${isTimeUrgent ? '#feb2b2' : isTimeWarning ? '#fbd38d' : '#9ae6b4'}`,
@@ -934,7 +860,7 @@ function QuizPage() {
               padding: '12px 20px',
               marginBottom: '20px',
               display: 'flex',
-              justify: 'space-between',
+              justifyContent: 'space-between',
               alignItems: 'center',
               boxShadow: '0 2px 10px rgba(0,0,0,0.05)'
             }}>
@@ -999,12 +925,10 @@ function QuizPage() {
             </div>
 
             <div className="question-card-box">
-              {/* Mô tả câu hỏi */}
               <div className="question-text">
                 {currentQuestion.description}
               </div>
 
-              {/* Danh sách options */}
               <div className="options-list">
                 {(currentQuestion.options || []).map((opt, optIdx) => (
                   <label key={opt.option_id || optIdx} className="option-item-label">
@@ -1018,7 +942,6 @@ function QuizPage() {
                   </label>
                 ))}
 
-                {/* Nếu không có options (short_answer, coding) */}
                 {(!currentQuestion.options || currentQuestion.options.length === 0) && (
                   <div style={{ marginTop: "16px" }}>
                     <textarea
@@ -1044,7 +967,6 @@ function QuizPage() {
                 )}
               </div>
 
-              {/* Nút điều hướng */}
               <div className="quiz-navigation-buttons-row">
                 <button
                   className="nav-step-btn"
@@ -1064,7 +986,6 @@ function QuizPage() {
             </div>
           </div>
 
-          {/* KHỐI PHẢI: SIDEBAR TRẠNG THÁI */}
           {isSidebarOpen && (
             <div className="quiz-right-sidebar">
               <button
