@@ -2,10 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import Header from '../../components/Header/Header';
 import { getAdminAnnouncementsAPI, getTeacherTicketsAPI, createTeacherTicketAPI } from '../../api/teacher/support';
+import { useToast } from '../../components/Toast/ToastContext';
 import './TeachingSupport.css';
 
 function TeachingSupport() {
   const navigate = useNavigate();
+  const { showToast } = useToast();
   const [searchParams, setSearchParams] = useSearchParams();
   const initialTab = searchParams.get('tab') || 'announcements';
   const [activeTab, setActiveTab] = useState(initialTab); // announcements, tickets, resources

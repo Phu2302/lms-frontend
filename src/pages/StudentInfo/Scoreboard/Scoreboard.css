@@ -3,6 +3,74 @@
   color: #333;
 }
 
+/* Header Area: Top-left GPA Card + Center Title */
+.scoreboard-top-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 20px;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.overall-gpa-card {
+  background: #ffffff;
+  border: 1px solid #c6f6d5;
+  border-left: 5px solid #008b44;
+  border-radius: 8px;
+  padding: 12px 18px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  min-width: 290px;
+}
+
+.gpa-card-title {
+  font-size: 12px;
+  font-weight: bold;
+  color: #005a2b;
+  margin-bottom: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.gpa-card-content {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.gpa-badge-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 13px;
+}
+
+.gpa-label {
+  color: #4a5568;
+}
+
+.gpa-value-green {
+  font-weight: bold;
+  color: #008b44;
+  font-size: 15px;
+}
+
+.gpa-value-blue {
+  font-weight: bold;
+  color: #2b6cb0;
+  font-size: 15px;
+}
+
+.gpa-value-dark {
+  font-weight: bold;
+  color: #2d3748;
+}
+
+.scoreboard-title-area {
+  flex: 1;
+  text-align: center;
+}
+
 .transcript-title {
   text-align: center;
   color: #008b44;
@@ -12,7 +80,7 @@
 
 .transcript-student-info {
   text-align: center;
-  margin-bottom: 25px;
+  margin-bottom: 15px;
   font-size: 15px;
 }
 
@@ -79,6 +147,21 @@
   color: #2d3748;
 }
 
+.letter-grade-badge {
+  font-weight: bold;
+  color: #005a2b;
+}
+
+.status-pass {
+  color: #276749;
+  font-weight: bold;
+}
+
+.status-fail {
+  color: #e53e3e;
+  font-weight: bold;
+}
+
 .empty-message {
   text-align: center;
   padding: 30px;
@@ -95,4 +178,134 @@
   margin-bottom: 15px;
   font-size: 14px;
   text-align: center;
+}
+
+/* Normal text grade cell with subtle click interaction */
+.clickable-grade-text {
+  cursor: pointer;
+  transition: color 0.15s ease;
+}
+
+.clickable-grade-text:hover {
+  color: #008b44;
+  text-decoration: underline;
+}
+
+/* Component Grade Details Modal Overlay */
+.grade-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  animation: fadeIn 0.2s ease-out;
+}
+
+.grade-modal-card {
+  background: #ffffff;
+  border-radius: 12px;
+  width: 100%;
+  max-width: 520px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+  overflow: hidden;
+  border: 1px solid #e2e8f0;
+}
+
+.grade-modal-header {
+  background-color: #008b44;
+  color: white;
+  padding: 16px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.grade-modal-header h3 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: bold;
+}
+
+.grade-modal-close-btn {
+  background: transparent;
+  border: none;
+  color: white;
+  font-size: 22px;
+  cursor: pointer;
+  line-height: 1;
+}
+
+.grade-modal-body {
+  padding: 20px;
+}
+
+.grade-course-info {
+  background: #f7fafc;
+  padding: 12px 16px;
+  border-radius: 8px;
+  margin-bottom: 16px;
+  font-size: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.grade-components-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 15px;
+  font-size: 13px;
+}
+
+.grade-components-table th,
+.grade-components-table td {
+  border: 1px solid #e2e8f0;
+  padding: 10px 12px;
+  text-align: center;
+}
+
+.grade-components-table th {
+  background-color: #edf2f7;
+  color: #4a5568;
+  font-weight: bold;
+}
+
+.grade-components-table tr.total-row {
+  background-color: #e6f4ea;
+  font-weight: bold;
+}
+
+.grade-modal-footer {
+  padding: 12px 20px;
+  background-color: #f7fafc;
+  border-top: 1px solid #edf2f7;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.grade-modal-dismiss-btn {
+  background-color: #008b44;
+  color: white;
+  border: none;
+  padding: 8px 20px;
+  font-weight: bold;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.grade-modal-dismiss-btn:hover {
+  background-color: #007237;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }

@@ -274,7 +274,7 @@ function OnlineGrading() {
                               />
                             </td>
                             <td>
-                              <strong style={{ color: computedTotal >= 5.0 ? '#008b44' : '#e53e3e' }}>
+                              <strong style={{ color: computedTotal >= 4.0 ? '#008b44' : '#e53e3e' }}>
                                 {computedTotal.toFixed(2)}
                               </strong>
                             </td>
