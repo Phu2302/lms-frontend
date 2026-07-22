@@ -7,7 +7,6 @@ function ExamSchedule() {
   const [exams, setExams] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
-  const [searchQuery, setSearchQuery] = useState('');
 
   // Lấy thông tin sinh viên từ localStorage
   const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
@@ -25,31 +24,12 @@ function ExamSchedule() {
       setExams(res.data || []);
     } catch (err) {
       console.error('Error fetching exam schedule:', err);
-      // Hiển thị lỗi thân thiện vì BE chưa implement API này
       setError('Không thể tải lịch thi từ hệ thống (API /users/exams chưa có sẵn).');
       setExams([]);
     } finally {
       setIsLoading(false);
     }
   };
-
-  // Lọc danh sách môn thi bằng từ khóa tìm kiếm (môn học, phòng thi, loại thi...)
-  const filteredExams = exams.filter(item => {
-    const query = searchQuery.toLowerCase();
-    const course = (item.monHoc || item.course_name || '').toLowerCase();
-    const room = (item.phong || item.room_name || '').toLowerCase();
-    const semester = (item.hocKy || String(item.semester_id || '')).toLowerCase();
-    const group = (item.nhom || item.class_code || '').toLowerCase();
-    const type = (item.loaiThi || item.exam_type || '').toLowerCase();
-    
-    return (
-      course.includes(query) ||
-      room.includes(query) ||
-      semester.includes(query) ||
-      group.includes(query) ||
-      type.includes(query)
-    );
-  });
 
   return (
     <div className="exam-schedule-container">
@@ -68,17 +48,6 @@ function ExamSchedule() {
           <option value="20252">20252 - Học kỳ 2 Năm học 2025 - 2026</option>
           <option value="20251">20251 - Học kỳ 1 Năm học 2025 - 2026</option>
         </select>
-        
-        <div className="search-box">
-          <label>Tìm kiếm: </label>
-          <input 
-            type="text" 
-            className="search-input" 
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Mã môn, phòng..."
-          />
-        </div>
       </div>
 
       {error && <div className="exam-error-message">{error}</div>}
@@ -105,8 +74,8 @@ function ExamSchedule() {
               <tr>
                 <td colSpan="11" className="empty-message">Đang tải dữ liệu...</td>
               </tr>
-            ) : filteredExams.length > 0 ? (
-              filteredExams.map((item, idx) => (
+            ) : exams.length > 0 ? (
+              exams.map((item, idx) => (
                 <tr key={item.id || item.exam_id || idx}>
                   <td>{item.hocKy || item.semester_id}</td>
                   <td>{item.monHoc || item.course_name}</td>
@@ -124,7 +93,7 @@ function ExamSchedule() {
             ) : (
               <tr>
                 <td colSpan="11" className="empty-message">
-                  {searchQuery ? 'Không tìm thấy kết quả phù hợp.' : 'Không có dữ liệu lịch thi cho học kỳ này.'}
+                  Không có dữ liệu lịch thi cho học kỳ này.
                 </td>
               </tr>
             )}

@@ -167,12 +167,7 @@ function OnlineGrading() {
       <Header view="teacher" />
       
       <div className="online-grading-body">
-        <button 
-          onClick={() => navigate('/')} 
-          className="back-btn"
-        >
-          ⬅ Quay lại Trang chủ
-        </button>
+
 
         <h1>Nhập Điểm Trực Tuyến</h1>
         <p className="subtitle">Giảng viên: {currentUser.user_name || 'N/A'}</p>

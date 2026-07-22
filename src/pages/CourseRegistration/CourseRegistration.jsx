@@ -30,6 +30,7 @@ function CourseRegistration() {
   const [periods, setPeriods] = useState([]);
   const [registeredCourses, setRegisteredCourses] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isSearching, setIsSearching] = useState(false);
   const [error, setError] = useState('');
 
   // States phục vụ việc tìm kiếm lớp môn học để đăng ký
@@ -47,6 +48,21 @@ function CourseRegistration() {
     } catch (e) {
       return dateStr;
     }
+  };
+
+  // Kiểm tra xem thời điểm hiện tại có thuộc khoảng thời gian đăng ký (Từ ngày - Đến ngày) hay không
+  const isRegistrationPeriodOpen = (period) => {
+    if (!period) return false;
+    if (period.rawStartDate && period.rawEndDate) {
+      const now = new Date();
+      const start = new Date(period.rawStartDate);
+      const end = new Date(period.rawEndDate);
+      if (!isNaN(start.getTime()) && !isNaN(end.getTime())) {
+        return now >= start && now <= end;
+      }
+    }
+    // Nếu chưa thiết lập thời gian đăng ký trong DB (null / trống), mặc định mở để phục vụ thử nghiệm
+    return true;
   };
 
   // Tải dữ liệu ban đầu (các học kỳ làm đợt đăng ký và các môn học đã đăng ký)
@@ -67,6 +83,8 @@ function CourseRegistration() {
       const mappedPeriods = (semestersRes.data || []).map(sem => ({
         id: String(sem.semester_id),
         name: `Đăng ký học phần - ${sem.semester_name}`,
+        rawStartDate: sem.reg_start_date,
+        rawEndDate: sem.reg_end_date,
         startDate: sem.reg_start_date ? formatDateTime(sem.reg_start_date) : '--',
         endDate: sem.reg_end_date ? formatDateTime(sem.reg_end_date) : '--'
       }));
@@ -147,8 +165,13 @@ function CourseRegistration() {
     }
   };
 
-  // Đăng ký một lớp học
+  // Đăng ký một lớp học (kiểm tra hạn thời gian đăng ký)
   const handleEnroll = async (classId) => {
+    if (!isRegistrationPeriodOpen(activePeriod)) {
+      showToast('Đã HẾT THỜI GIAN ĐĂNG KÝ môn học! Bạn không thể đăng ký thêm môn học này.', 'error');
+      return;
+    }
+
     try {
       await enrollClassAPI(classId);
       showToast('Đăng ký lớp học thành công!', 'success');
@@ -159,8 +182,13 @@ function CourseRegistration() {
     }
   };
 
-  // Hủy đăng ký một lớp học
+  // Hủy đăng ký một lớp học (CHỈ CHO PHÉP TRONG THỜI GIAN ĐĂNG KÝ)
   const handleUnenroll = async (classId) => {
+    if (!isRegistrationPeriodOpen(activePeriod)) {
+      showToast('Đã HẾT THỜI GIAN ĐĂNG KÝ môn học! Bạn không thể hủy hoặc xóa môn học này.', 'error');
+      return;
+    }
+
     if (!window.confirm('Bạn có chắc chắn muốn hủy đăng ký lớp học này?')) return;
     try {
       await unenrollClassAPI(classId);
@@ -177,6 +205,8 @@ function CourseRegistration() {
     activePeriod && String(cls.semester_id) === String(activePeriod.id)
   );
 
+  const isPeriodOpen = isRegistrationPeriodOpen(activePeriod);
+
   if (isLoading && periods.length === 0) {
     return <div className="cr-loading">Đang tải thông tin đợt đăng ký...</div>;
   }
@@ -190,8 +220,15 @@ function CourseRegistration() {
             myBH
           </div>
           <div className="cr-nav-title">Đăng ký môn học</div>
-          <div className="cr-logout-wrapper" style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center' }}>
-            <button className="nav-logout-btn" onClick={handleLogout}>Đăng xuất</button>
+          <div className="cr-logout-wrapper" style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <button 
+              className="nav-home-btn" 
+              onClick={() => navigate('/')} 
+              style={{ background: '#008b44', color: '#fff', border: 'none', borderRadius: '0px', padding: '6px 14px', cursor: 'pointer', fontWeight: 'bold', fontSize: '13px' }}
+            >
+              Trang chủ
+            </button>
+            <button className="nav-logout-btn" onClick={handleLogout} style={{ borderRadius: '0px' }}>Đăng xuất</button>
           </div>
         </nav>
         <div className="cr-main-content">
@@ -204,30 +241,46 @@ function CourseRegistration() {
                   <th>STT</th>
                   <th>Đợt Đăng ký</th>
                   <th>Thời gian đăng ký</th>
+                  <th>Trạng thái</th>
                   <th>Hành động</th>
                 </tr>
               </thead>
               <tbody>
                 {periods.length > 0 ? (
-                  periods.map((period, index) => (
-                    <tr key={period.id}>
-                      <td>{index + 1}</td>
-                      <td>
-                        <strong>{period.id}</strong>
-                        <br/>
-                        <span className="cr-text-small">{period.name}</span>
-                      </td>
-                      <td>{period.startDate} - {period.endDate}</td>
-                      <td>
-                        <button className="cr-btn-primary" onClick={() => setActivePeriod(period)}>
-                          Vào đăng ký
-                        </button>
-                      </td>
-                    </tr>
-                  ))
+                  periods.map((period, index) => {
+                    const open = isRegistrationPeriodOpen(period);
+                    return (
+                      <tr key={period.id}>
+                        <td>{index + 1}</td>
+                        <td>
+                          <strong>{period.id}</strong>
+                          <br/>
+                          <span className="cr-text-small">{period.name}</span>
+                        </td>
+                        <td>{period.startDate} - {period.endDate}</td>
+                        <td>
+                          <span style={{ 
+                            fontWeight: 'bold', 
+                            color: open ? '#008b44' : '#e53e3e',
+                            background: open ? '#e6f4ea' : '#fff5f5',
+                            padding: '4px 8px',
+                            borderRadius: '4px',
+                            fontSize: '12px'
+                          }}>
+                            {open ? 'Đang mở' : 'Đã kết thúc'}
+                          </span>
+                        </td>
+                        <td>
+                          <button className="cr-btn-primary" onClick={() => setActivePeriod(period)}>
+                            Vào đăng ký
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })
                 ) : (
                   <tr>
-                    <td colSpan="4" className="empty-message">Hiện tại chưa có đợt đăng ký môn học nào mở.</td>
+                    <td colSpan="5" className="empty-message">Hiện tại chưa có đợt đăng ký môn học nào mở.</td>
                   </tr>
                 )}
               </tbody>
@@ -254,7 +307,16 @@ function CourseRegistration() {
             ĐĂNG KÝ/ HIỆU CHỈNH ({activePeriod.id}) {activePeriod.name}
           </span>
         </div>
-        <button className="nav-logout-btn" onClick={handleLogout}>Đăng xuất</button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <button 
+            className="nav-home-btn" 
+            onClick={() => navigate('/')} 
+            style={{ background: '#ffffff', color: '#008b44', border: 'none', borderRadius: '0px', padding: '6px 14px', cursor: 'pointer', fontWeight: 'bold', fontSize: '13px' }}
+          >
+            Trang chủ
+          </button>
+          <button className="nav-logout-btn" onClick={handleLogout} style={{ borderRadius: '0px' }}>Đăng xuất</button>
+        </div>
       </div>
 
       <div className="cr-main-content">
@@ -273,7 +335,9 @@ function CourseRegistration() {
               </thead>
               <tbody>
                 <tr>
-                  <td style={{ color: 'red', fontWeight: 'bold' }}>✖</td>
+                  <td style={{ color: isPeriodOpen ? '#008b44' : '#e53e3e', fontWeight: 'bold' }}>
+                    {isPeriodOpen ? '✔' : '✖'}
+                  </td>
                   <td>{activePeriod.startDate}</td>
                   <td>{activePeriod.endDate}</td>
                 </tr>
@@ -293,7 +357,9 @@ function CourseRegistration() {
                 onChange={e => setSearchQuery(e.target.value)}
                 onKeyDown={e => e.key === 'Enter' && handleSearch()}
               />
-              <button className="cr-search-btn" onClick={handleSearch}>🔍</button>
+              <button className="cr-search-btn" onClick={handleSearch} disabled={isSearching}>
+                {isSearching ? '...' : '🔍'}
+              </button>
             </div>
             
             {searchMessage && <p className="cr-search-msg">{searchMessage}</p>}
@@ -325,6 +391,8 @@ function CourseRegistration() {
                           <td>
                             {isAlreadyEnrolled ? (
                               <button className="cr-btn-disabled" disabled>Đã đăng ký</button>
+                            ) : !isPeriodOpen ? (
+                              <button className="cr-btn-disabled" disabled title="Đã hết thời hạn đăng ký môn học">Hết hạn đăng ký</button>
                             ) : (
                               <button 
                                 className="cr-btn-primary cr-btn-small" 
@@ -367,7 +435,20 @@ function CourseRegistration() {
                     <td>{course.class_code || course.nhom}</td>
                     <td>{course.credit || course.tinChi}</td>
                     <td>
-                      <button className="cr-btn-danger" onClick={() => handleUnenroll(course.class_id)}>Xóa</button>
+                      {isPeriodOpen ? (
+                        <button className="cr-btn-danger" onClick={() => handleUnenroll(course.class_id)}>
+                          Xóa
+                        </button>
+                      ) : (
+                        <button 
+                          className="cr-btn-disabled" 
+                          disabled 
+                          title="Đã hết thời gian đăng ký. Không thể hủy hoặc xóa môn học."
+                          style={{ opacity: 0.6, cursor: 'not-allowed', backgroundColor: '#a0aec0', color: '#fff', padding: '4px 10px', border: 'none', borderRadius: '4px' }}
+                        >
+                          Hết hạn xóa
+                        </button>
+                      )}
                     </td>
                   </tr>
                 ))

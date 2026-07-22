@@ -92,9 +92,7 @@ function TeachingSupport() {
       <Header view="teacher" />
 
       <div className="teaching-support-body">
-        <button className="back-btn" onClick={() => navigate('/')}>
-          ⬅ Quay lại Trang chủ
-        </button>
+
 
         <div className="support-header">
           <h1>Hỗ trợ & Quản lý giảng dạy</h1>

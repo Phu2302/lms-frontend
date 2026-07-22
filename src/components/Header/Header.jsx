@@ -101,6 +101,24 @@ function Header({ view }) {
 
       <div className="navbar-right">
         <button
+          className="portal-home-link-btn"
+          onClick={() => navigate('/')}
+          title="Quay lại Trang chủ Cổng thông tin myBH"
+          style={{
+            background: '#008b44',
+            color: '#ffffff',
+            border: 'none',
+            padding: '6px 14px',
+            borderRadius: '0px',
+            fontWeight: 'bold',
+            fontSize: '13px',
+            cursor: 'pointer',
+            marginRight: '10px'
+          }}
+        >
+          Trang chủ
+        </button>
+        <button
           className="nav-notification"
           onClick={() => showToast('Bạn chưa có thông báo mới.', 'info')}
           title="Thông báo"
@@ -132,6 +150,9 @@ function Header({ view }) {
 
               <hr className="dropdown-divider" />
 
+              <button className="dropdown-item" onClick={() => { setShowDropdown(false); navigate('/'); }}>
+                Trang chủ Cổng thông tin
+              </button>
               <button className="dropdown-item" onClick={handleProfileClick}>
                 👤 Profile
               </button>

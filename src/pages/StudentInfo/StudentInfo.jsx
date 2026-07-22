@@ -110,13 +110,13 @@ function StudentInfo() {
         <div className="nav-tabs-wrapper">
           {getSidebarCategory(activeSubTab) === 'student' && (
             <>
-              <button 
+              <button
                 className={`nav-tab-btn ${activeSubTab === 'info' ? 'active' : ''}`}
                 onClick={() => handleSubTabChange('info')}
               >
                 Thông tin sinh viên
               </button>
-              <button 
+              <button
                 className={`nav-tab-btn ${activeSubTab === 'exam' ? 'active' : ''}`}
                 onClick={() => handleSubTabChange('exam')}
               >
@@ -125,8 +125,8 @@ function StudentInfo() {
             </>
           )}
           {getSidebarCategory(activeSubTab) === 'timetable' && (
-            <button 
-              className={`nav-tab-btn ${activeSubTab === 'schedule' ? 'active' : ''}`} 
+            <button
+              className={`nav-tab-btn ${activeSubTab === 'schedule' ? 'active' : ''}`}
               onClick={() => handleSubTabChange('schedule')}
             >
               Thời khoá biểu
@@ -134,25 +134,25 @@ function StudentInfo() {
           )}
           {getSidebarCategory(activeSubTab) === 'services' && (
             <>
-              <button 
+              <button
                 className={`nav-tab-btn ${activeSubTab === 'service_cert' ? 'active' : ''}`}
                 onClick={() => handleSubTabChange('service_cert')}
               >
                 Đăng ký giấy xác nhận
               </button>
-              <button 
+              <button
                 className={`nav-tab-btn ${activeSubTab === 'service_card' ? 'active' : ''}`}
                 onClick={() => handleSubTabChange('service_card')}
               >
                 Đăng ký in thẻ sinh viên
               </button>
-              <button 
+              <button
                 className={`nav-tab-btn ${activeSubTab === 'service_withdraw' ? 'active' : ''}`}
                 onClick={() => handleSubTabChange('service_withdraw')}
               >
                 Đăng ký rút môn học
               </button>
-              <button 
+              <button
                 className={`nav-tab-btn ${activeSubTab === 'service_appeal' ? 'active' : ''}`}
                 onClick={() => handleSubTabChange('service_appeal')}
               >
@@ -161,16 +161,23 @@ function StudentInfo() {
             </>
           )}
           {getSidebarCategory(activeSubTab) === 'grades' && (
-            <button 
-              className={`nav-tab-btn ${activeSubTab === 'scoreboard' ? 'active' : ''}`} 
+            <button
+              className={`nav-tab-btn ${activeSubTab === 'scoreboard' ? 'active' : ''}`}
               onClick={() => handleSubTabChange('scoreboard')}
             >
               Bảng điểm
             </button>
           )}
         </div>
-        <div className="nav-logout-wrapper" style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', paddingRight: '20px' }}>
-          <button className="nav-logout-btn" onClick={handleLogout}>Đăng xuất</button>
+        <div className="nav-logout-wrapper" style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '10px', paddingRight: '20px' }}>
+          <button 
+            className="nav-home-btn" 
+            onClick={() => navigate('/')} 
+            style={{ background: '#008b44', color: '#fff', border: 'none', borderRadius: '0px', padding: '6px 14px', cursor: 'pointer', fontWeight: 'bold', fontSize: '13px' }}
+          >
+            Trang chủ
+          </button>
+          <button className="nav-logout-btn" onClick={handleLogout} style={{ borderRadius: '0px' }}>Đăng xuất</button>
         </div>
       </nav>
 
@@ -182,25 +189,25 @@ function StudentInfo() {
           <div className="sidebar-logo-container">BK</div>
 
           <div className="sidebar-menu-list">
-            <button 
+            <button
               className={`sidebar-item-btn ${activeSubTab === 'info' || activeSubTab === 'exam' ? 'active' : ''}`}
               onClick={() => handleSubTabChange('info')}
             >
               ☰ Sinh viên
             </button>
-            <button 
+            <button
               className={`sidebar-item-btn ${activeSubTab === 'schedule' ? 'active' : ''}`}
               onClick={() => handleSubTabChange('schedule')}
             >
               ☰ Thời khóa biểu
             </button>
-            <button 
+            <button
               className={`sidebar-item-btn ${activeSubTab === 'service_cert' || activeSubTab === 'service_card' || activeSubTab === 'service_withdraw' || activeSubTab === 'service_appeal' ? 'active' : ''}`}
               onClick={() => handleSubTabChange('service_cert')}
             >
               ☰ Dịch vụ sinh viên
             </button>
-            <button 
+            <button
               className={`sidebar-item-btn ${activeSubTab === 'scoreboard' ? 'active' : ''}`}
               onClick={() => handleSubTabChange('scoreboard')}
             >
@@ -215,116 +222,116 @@ function StudentInfo() {
             <div className="info-card-wrapper">
               <div className="info-card-header">Thông tin cá nhân</div>
 
-            <div className="info-card-body">
+              <div className="info-card-body">
 
-              {/* Loading state */}
-              {loading && (
-                <div style={{ textAlign: 'center', padding: '40px', color: '#666' }}>
-                  ⏳ Đang tải thông tin sinh viên...
-                </div>
-              )}
-
-              {/* Error state */}
-              {error && (
-                <div style={{ textAlign: 'center', padding: '20px', color: '#c00', background: '#fee', borderRadius: '8px' }}>
-                  {error}
-                  <br />
-                  <button onClick={fetchProfile} style={{ marginTop: '10px', padding: '6px 16px', cursor: 'pointer', border: '1px solid #ccc', borderRadius: '4px' }}>
-                    Thử lại
-                  </button>
-                </div>
-              )}
-
-              {/* Hiển thị dữ liệu khi có */}
-              {!loading && !error && studentData && (
-                <>
-                  {/* Ảnh đại diện */}
-                  <div className="student-avatar-box">
-                    <img
-                      src={studentData.avatar || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=200&auto=format&fit=crop"}
-                      alt="Avatar Sinh Viên"
-                    />
+                {/* Loading state */}
+                {loading && (
+                  <div style={{ textAlign: 'center', padding: '40px', color: '#666' }}>
+                    ⏳ Đang tải thông tin sinh viên...
                   </div>
+                )}
 
-                  {/* Lưới thông tin 5 cột chuẩn bố cục */}
-                  <div className="student-info-grid">
-
-                    {/* HÀNG 1 */}
-                    <div className="info-field-item">
-                      <span className="info-field-label">Mã số sinh viên</span>
-                      <span className="info-field-value">{studentData.user_id || studentData.mssv || 'N/A'}</span>
-                    </div>
-
-                    <div className="info-field-item">
-                      <span className="info-field-label">Họ và tên lót</span>
-                      <span className="info-field-value">{studentData.last_name || studentData.hoDem || 'N/A'}</span>
-                    </div>
-
-                    <div className="info-field-item">
-                      <span className="info-field-label">Tên</span>
-                      <span className="info-field-value">{studentData.first_name || studentData.ten || studentData.user_name || 'N/A'}</span>
-                    </div>
-
-                    <div className="info-field-item">
-                      <span className="info-field-label">Ngày sinh</span>
-                      <span className="info-field-value">{studentData.date_of_birth || studentData.ngaySinh || 'N/A'}</span>
-                    </div>
-
-                    <div className="info-field-item">
-                      <span className="info-field-label">Giới tính</span>
-                      <span className="info-field-value">{studentData.gender || 'N/A'}</span>
-                    </div>
-
-                    {/* HÀNG 2 */}
-                    <div className="info-field-item">
-                      <span className="info-field-label">Lớp danh nghĩa</span>
-                      <span className="info-field-value">{studentData.class_name || studentData.lop || 'N/A'}</span>
-                    </div>
-
-                    <div className="info-field-item">
-                      <span className="info-field-label">Khóa học</span>
-                      <span className="info-field-value">{studentData.enrollment_year || studentData.khoaHoc || 'N/A'}</span>
-                    </div>
-
-                    <div className="info-field-item">
-                      <span className="info-field-label">Bậc đào tạo</span>
-                      <span className="info-field-value">{studentData.education_level || studentData.bacDaoTao || 'Đại học chính quy'}</span>
-                    </div>
-
-                    <div className="info-field-item">
-                      <span className="info-field-label">Quê quán</span>
-                      <span className="info-field-value">{studentData.address || studentData.hometown || studentData.queQuan || 'N/A'}</span>
-                    </div>
-
-                    <div className="info-field-item">
-                      <span className="info-field-label">Trạng thái</span>
-                      <span className="info-field-value" style={{ color: '#008b44', fontWeight: 'bold' }}>
-                        {studentData.status || 'Đang học'}
-                      </span>
-                    </div>
-
-                    {/* HÀNG 3 */}
-                    <div className="info-field-item" style={{ gridColumn: 'span 2' }}>
-                      <span className="info-field-label">Khoa quản lý</span>
-                      <span className="info-field-value">{studentData.faculty_name || studentData.khoa || 'N/A'}</span>
-                    </div>
-
-                    <div className="info-field-item" style={{ gridColumn: 'span 1' }}>
-                      <span className="info-field-label">Ngành học</span>
-                      <span className="info-field-value">{studentData.major || studentData.nganh || 'N/A'}</span>
-                    </div>
-
-                    <div className="info-field-item" style={{ gridColumn: 'span 2' }}>
-                      <span className="info-field-label">Email sinh viên</span>
-                      <span className="info-field-value">{studentData.email || 'N/A'}</span>
-                    </div>
-
+                {/* Error state */}
+                {error && (
+                  <div style={{ textAlign: 'center', padding: '20px', color: '#c00', background: '#fee', borderRadius: '8px' }}>
+                    {error}
+                    <br />
+                    <button onClick={fetchProfile} style={{ marginTop: '10px', padding: '6px 16px', cursor: 'pointer', border: '1px solid #ccc', borderRadius: '4px' }}>
+                      Thử lại
+                    </button>
                   </div>
-                </>
-              )}
+                )}
 
+                {/* Hiển thị dữ liệu khi có */}
+                {!loading && !error && studentData && (
+                  <>
+                    {/* Ảnh đại diện */}
+                    <div className="student-avatar-box">
+                      <img
+                        src={studentData.avatar || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=200&auto=format&fit=crop"}
+                        alt="Avatar Sinh Viên"
+                      />
+                    </div>
+
+                    {/* Lưới thông tin 5 cột chuẩn bố cục */}
+                    <div className="student-info-grid">
+
+                      {/* HÀNG 1 */}
+                      <div className="info-field-item">
+                        <span className="info-field-label">Mã số sinh viên</span>
+                        <span className="info-field-value">{studentData.user_id || studentData.mssv || 'N/A'}</span>
+                      </div>
+
+                      <div className="info-field-item">
+                        <span className="info-field-label">Họ và tên lót</span>
+                        <span className="info-field-value">{studentData.last_name || studentData.hoDem || 'N/A'}</span>
+                      </div>
+
+                      <div className="info-field-item">
+                        <span className="info-field-label">Tên</span>
+                        <span className="info-field-value">{studentData.first_name || studentData.ten || studentData.user_name || 'N/A'}</span>
+                      </div>
+
+                      <div className="info-field-item">
+                        <span className="info-field-label">Ngày sinh</span>
+                        <span className="info-field-value">{studentData.date_of_birth || studentData.ngaySinh || 'N/A'}</span>
+                      </div>
+
+                      <div className="info-field-item">
+                        <span className="info-field-label">Giới tính</span>
+                        <span className="info-field-value">{studentData.gender || 'N/A'}</span>
+                      </div>
+
+                      {/* HÀNG 2 */}
+                      <div className="info-field-item">
+                        <span className="info-field-label">Lớp</span>
+                        <span className="info-field-value">{studentData.class_name || studentData.lop || 'N/A'}</span>
+                      </div>
+
+                      <div className="info-field-item">
+                        <span className="info-field-label">Khóa học</span>
+                        <span className="info-field-value">{studentData.enrollment_year || studentData.khoaHoc || 'N/A'}</span>
+                      </div>
+
+                      <div className="info-field-item">
+                        <span className="info-field-label">Bậc đào tạo</span>
+                        <span className="info-field-value">{studentData.education_level || studentData.bacDaoTao || 'Đại học chính quy'}</span>
+                      </div>
+
+                      <div className="info-field-item">
+                        <span className="info-field-label">Quê quán</span>
+                        <span className="info-field-value">{studentData.address || studentData.hometown || studentData.queQuan || 'N/A'}</span>
+                      </div>
+
+                      <div className="info-field-item">
+                        <span className="info-field-label">Trạng thái</span>
+                        <span className="info-field-value" style={{ color: '#008b44', fontWeight: 'bold' }}>
+                          {studentData.status || 'Đang học'}
+                        </span>
+                      </div>
+
+                      {/* HÀNG 3 */}
+                      <div className="info-field-item" style={{ gridColumn: 'span 2' }}>
+                        <span className="info-field-label">Khoa quản lý</span>
+                        <span className="info-field-value">{studentData.faculty_name || studentData.khoa || 'N/A'}</span>
+                      </div>
+
+                      <div className="info-field-item" style={{ gridColumn: 'span 1' }}>
+                        <span className="info-field-label">Ngành học</span>
+                        <span className="info-field-value">{studentData.major || studentData.nganh || 'N/A'}</span>
+                      </div>
+
+                      <div className="info-field-item" style={{ gridColumn: 'span 2' }}>
+                        <span className="info-field-label">Email sinh viên</span>
+                        <span className="info-field-value">{studentData.email || 'N/A'}</span>
+                      </div>
+
+                    </div>
+                  </>
+                )}
+
+              </div>
             </div>
-          </div>
           ) : activeSubTab === 'schedule' ? (
             <Timetable />
           ) : activeSubTab === 'exam' ? (

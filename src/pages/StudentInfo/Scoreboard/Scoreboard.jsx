@@ -36,7 +36,6 @@ function Scoreboard() {
   const [overallSummary, setOverallSummary] = useState({ gpa10: '0.00', gpa4: '0.00', passedCredits: 0, registeredCredits: 0 });
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
-  const [searchQuery, setSearchQuery] = useState('');
   const [selectedCourseForModal, setSelectedCourseForModal] = useState(null);
 
   // Lấy thông tin sinh viên từ localStorage
@@ -105,7 +104,7 @@ function Scoreboard() {
           totalAllGradePoints4 += score4 * credit;
           totalAllGradedCredits += credit;
 
-          // Điều kiện đạt môn (Theo thang điểm chuẩn: Score >= 4.0 -> Điểm D trở lên là Đạt)
+          // Điều kiện đạt môn (Score >= 4.0 -> Điểm D trở lên là Đạt)
           if (score10 >= 4.0) {
             totalAllPassedCredits += credit;
           }
@@ -245,25 +244,6 @@ function Scoreboard() {
     }
   };
 
-  // Tìm kiếm môn học
-  const filterSemestersData = () => {
-    if (!searchQuery.trim()) return semesterGrades;
-    const query = searchQuery.toLowerCase();
-    
-    return semesterGrades.map(semester => {
-      const filteredGrades = semester.grades.filter(g => 
-        g.tenMH?.toLowerCase().includes(query) ||
-        g.maMH?.toLowerCase().includes(query)
-      );
-      return {
-        ...semester,
-        grades: filteredGrades
-      };
-    }).filter(semester => semester.grades.length > 0);
-  };
-
-  const displayData = filterSemestersData();
-
   return (
     <div className="transcript-container">
       {/* Header Top Bar: GPA Tích lũy toàn khóa (Góc trên trái) + Tiêu đề */}
@@ -296,19 +276,6 @@ function Scoreboard() {
             Họ tên: <strong>{studentName}</strong>
           </div>
         </div>
-
-        <div className="transcript-controls">
-          <div className="search-box">
-            <label>Tìm kiếm: </label>
-            <input 
-              type="text" 
-              className="search-input" 
-              placeholder="Nhập tên hoặc mã môn..." 
-              value={searchQuery}
-              onChange={e => setSearchQuery(e.target.value)}
-            />
-          </div>
-        </div>
       </div>
 
       {error && <div className="scoreboard-error-banner">{error}</div>}
@@ -334,8 +301,8 @@ function Scoreboard() {
               <tr>
                 <td colSpan="10" className="empty-message">Đang tải dữ liệu...</td>
               </tr>
-            ) : displayData.length > 0 ? (
-              displayData.map((semester) => (
+            ) : semesterGrades.length > 0 ? (
+              semesterGrades.map((semester) => (
                 <React.Fragment key={semester.id}>
                   {/* Dòng tổng kết với 1 ô gộp bên trái cho tên Học kỳ (rowSpan=2) */}
                   <tr className="summary-row">
@@ -390,7 +357,7 @@ function Scoreboard() {
             ) : (
               <tr>
                 <td colSpan="10" className="empty-message">
-                  {searchQuery ? 'Không tìm thấy kết quả phù hợp.' : 'Chưa có dữ liệu bảng điểm.'}
+                  Chưa có dữ liệu bảng điểm.
                 </td>
               </tr>
             )}
