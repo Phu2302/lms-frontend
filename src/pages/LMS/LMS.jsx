@@ -2,11 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getUserClassesAPI } from '../../api/StudentInfo/Profile/users';
 import Header from '../../components/Header/Header';
+import { useAuth } from '../../contexts/AuthContext';
 import './LMS.css';
 
 function LMS({ view }) { // Nhận biến view từ App.jsx gửi sang
   const navigate = useNavigate();
-
+  const { user } = useAuth();
 
   // Phân trang (Tối đa 10 môn trên 1 trang - bấm chuyển trang không đổi URL)
   const [currentPage, setCurrentPage] = useState(1);
@@ -21,8 +22,8 @@ function LMS({ view }) { // Nhận biến view từ App.jsx gửi sang
   const [error, setError] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
 
-  // Lấy thông tin user từ localStorage
-  const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
+  // Lấy thông tin user từ AuthContext hoặc localStorage
+  const currentUser = user || JSON.parse(localStorage.getItem('user') || '{}');
 
   useEffect(() => {
     document.title = view === 'courses' ? 'Các khóa học của tôi - BK LMS' : 'Trang chủ - BK LMS';

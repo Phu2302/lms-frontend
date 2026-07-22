@@ -1,12 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { loginAPI } from '../../api/auth/auth';
+import { useAuth } from '../../contexts/AuthContext';
 import './LoginPage.css';
 
 function LoginPage() {
   const location = useLocation();
   const navigate = useNavigate();
+  const { login } = useAuth();
 
+  const searchParams = new URLSearchParams(location.search);
+  const redirectUrl = searchParams.get('redirect') || location.state?.from;
   const targetService = location.state?.targetService || 'LMS';
 
   const [user, setUser] = useState('');
@@ -26,13 +30,20 @@ function LoginPage() {
     const userRole = String(currentUser?.role || '1');
 
     if (token) {
+      if (redirectUrl) {
+        navigate(redirectUrl, { replace: true });
+        return;
+      }
+
       if (userRole === '2' || userRole === '3') {
         if (targetService === 'Thông tin sinh viên' || targetService === 'Đăng ký in giấy xác nhận') {
           navigate(userRole === '2' ? '/online-grading' : '/lms', { replace: true });
           return;
         }
       }
-      if (targetService === 'Thông tin sinh viên') {
+      if (targetService === 'Các khóa học của tôi') {
+        navigate('/lms/course', { replace: true });
+      } else if (targetService === 'Thông tin sinh viên') {
         navigate('/student-info?tab=info', { replace: true });
       } else if (targetService === 'Đăng ký in giấy xác nhận') {
         navigate('/student-info?tab=service', { replace: true, state: { defaultTab: 'service' } });
@@ -42,7 +53,7 @@ function LoginPage() {
         navigate('/lms', { replace: true });
       }
     }
-  }, [navigate, targetService]);
+  }, [navigate, targetService, redirectUrl]);
 
   const handleLoginSubmit = async (e) => {
     e.preventDefault();
@@ -59,9 +70,8 @@ function LoginPage() {
       // Gọi API đăng nhập thật từ backend
       const res = await loginAPI(user, pass);
 
-      // Lưu token và thông tin user vào localStorage
-      localStorage.setItem('token', res.data.token);
-      localStorage.setItem('user', JSON.stringify(res.data.user));
+      // Lưu token và thông tin user vào localStorage đồng thời cập nhật AuthContext state
+      login(res.data.token, res.data.user);
 
       // Điều hướng dựa trên role từ backend
       const userRole = String(res.data.user.role);
@@ -74,8 +84,12 @@ function LoginPage() {
         return;
       }
 
-      // Điều hướng động theo dịch vụ đã chọn
-      if (targetService === 'Thông tin sinh viên') {
+      // Điều hướng động theo redirect parameter hoặc dịch vụ đã chọn
+      if (redirectUrl) {
+        navigate(redirectUrl);
+      } else if (targetService === 'Các khóa học của tôi') {
+        navigate('/lms/course');
+      } else if (targetService === 'Thông tin sinh viên') {
         navigate('/student-info?tab=info');
       } else if (targetService === 'Đăng ký in giấy xác nhận') {
         navigate('/student-info?tab=service', { state: { defaultTab: 'service' } });

@@ -4,12 +4,14 @@ import Header from '../../components/Header/Header';
 import { getUserClassesAPI } from '../../api/StudentInfo/Profile/users';
 import { getClassGradesAPI, saveBatchGradesAPI } from '../../api/teacher/grades';
 import { useToast } from '../../components/Toast/ToastContext';
+import { useAuth } from '../../contexts/AuthContext';
 import './OnlineGrading.css';
 
 function OnlineGrading() {
   const navigate = useNavigate();
   const { showToast } = useToast();
-  const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
+  const { user } = useAuth();
+  const currentUser = user || JSON.parse(localStorage.getItem('user') || '{}');
 
   const [classes, setClasses] = useState([]);
   const [selectedClass, setSelectedClass] = useState(null);

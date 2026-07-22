@@ -30,7 +30,8 @@ api.interceptors.response.use(
 
       // Chỉ redirect nếu không phải đang ở trang login (tránh vòng lặp)
       if (!window.location.pathname.includes('/login')) {
-        window.location.href = '/login';
+        const currentPath = window.location.pathname + window.location.search;
+        window.location.href = `/login?redirect=${encodeURIComponent(currentPath)}`;
       }
     }
     return Promise.reject(error);
