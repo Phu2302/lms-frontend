@@ -437,7 +437,7 @@ function QuizPage() {
     const scores = validEntries.map(e => Number(e.entry_score));
     const avgScore = (scores.reduce((a, b) => a + b, 0) / totalCount).toFixed(2);
     const maxScore = Math.max(...scores).toFixed(2);
-    const passCount = scores.filter(s => s >= 5.0).length;
+    const passCount = scores.filter(s => s >= 4.0).length;
     const passRate = Math.round((passCount / totalCount) * 100);
 
     return { totalCount, avgScore, maxScore, passRate };
@@ -777,7 +777,7 @@ function QuizPage() {
                       <div style={{ fontSize: '22px', fontWeight: 'bold', color: '#38a169' }}>{analytics.maxScore}</div>
                     </div>
                     <div style={{ background: '#fff', padding: '12px', borderRadius: '8px', textAlign: 'center', border: '1px solid #e2e8f0' }}>
-                      <span style={{ fontSize: '12px', color: '#718096' }}>Tỷ lệ Đạt (≥ 5.0)</span>
+                      <span style={{ fontSize: '12px', color: '#718096' }}>Tỷ lệ Đạt (≥ 4.0)</span>
                       <div style={{ fontSize: '22px', fontWeight: 'bold', color: analytics.passRate >= 70 ? '#38a169' : '#e53e3e' }}>{analytics.passRate}%</div>
                     </div>
                   </div>

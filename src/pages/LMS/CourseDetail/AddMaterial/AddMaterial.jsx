@@ -2,12 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import api from '../../../../api/axios';
 import Header from '../../../../components/Header/Header';
+import { useToast } from '../../../../components/Toast/ToastContext';
 import './AddMaterial.css';
 
 function AddMaterial() {
   const { courseId, chapterId } = useParams();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const { showToast } = useToast();
   const chapterOrder = Number(searchParams.get('order')) || 1;
 
   const [courseName, setCourseName] = useState('');

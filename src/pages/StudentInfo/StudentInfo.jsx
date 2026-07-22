@@ -15,13 +15,17 @@ function StudentInfo() {
   const [searchParams, setSearchParams] = useSearchParams();
   const { showToast } = useToast();
 
-  const initialTab = searchParams.get('tab') || location.state?.defaultTab || 'info';
+  let initialTab = searchParams.get('tab') || location.state?.defaultTab || 'info';
+  if (initialTab === 'service') initialTab = 'service_cert';
   const [activeSubTab, setActiveSubTab] = useState(initialTab);
 
   useEffect(() => {
     const titles = {
       info: 'Thông tin sinh viên - BK LMS',
-      service: 'Đăng ký in giấy xác nhận - BK LMS',
+      service_cert: 'Đăng ký in giấy xác nhận - BK LMS',
+      service_card: 'Đăng ký in thẻ sinh viên - BK LMS',
+      service_withdraw: 'Đăng ký rút môn học - BK LMS',
+      service_appeal: 'Đăng ký phúc khảo điểm - BK LMS',
       exam: 'Lịch thi sinh viên - BK LMS',
       scoreboard: 'Bảng điểm sinh viên - BK LMS',
       schedule: 'Thời khóa biểu sinh viên - BK LMS'
@@ -35,7 +39,8 @@ function StudentInfo() {
   };
 
   useEffect(() => {
-    const tabFromUrl = searchParams.get('tab');
+    let tabFromUrl = searchParams.get('tab');
+    if (tabFromUrl === 'service') tabFromUrl = 'service_cert';
     if (tabFromUrl && tabFromUrl !== activeSubTab) {
       setActiveSubTab(tabFromUrl);
     }
@@ -86,6 +91,14 @@ function StudentInfo() {
     }
   };
 
+  const getSidebarCategory = (tab) => {
+    if (tab === 'info' || tab === 'exam') return 'student';
+    if (tab === 'schedule') return 'timetable';
+    if (tab === 'service_cert' || tab === 'service_card' || tab === 'service_withdraw' || tab === 'service_appeal') return 'services';
+    if (tab === 'scoreboard') return 'grades';
+    return 'student';
+  };
+
   return (
     <div className="mybh-layout">
 
@@ -95,30 +108,66 @@ function StudentInfo() {
           myBH
         </div>
         <div className="nav-tabs-wrapper">
-          <button 
-            className={`nav-tab-btn ${activeSubTab === 'info' ? 'active' : ''}`}
-            onClick={() => handleSubTabChange('info')}
-          >
-            Thông tin sinh viên
-          </button>
-          <button 
-            className={`nav-tab-btn ${activeSubTab === 'service' ? 'active' : ''}`}
-            onClick={() => handleSubTabChange('service')}
-          >
-            Đăng ký in giấy xác nhận
-          </button>
-          <button 
-            className={`nav-tab-btn ${activeSubTab === 'exam' ? 'active' : ''}`}
-            onClick={() => handleSubTabChange('exam')}
-          >
-            Lịch thi
-          </button>
-          <button 
-            className={`nav-tab-btn ${activeSubTab === 'schedule' ? 'active' : ''}`} 
-            onClick={() => handleSubTabChange('schedule')}
-          >
-            Thời khoá biểu
-          </button>
+          {getSidebarCategory(activeSubTab) === 'student' && (
+            <>
+              <button 
+                className={`nav-tab-btn ${activeSubTab === 'info' ? 'active' : ''}`}
+                onClick={() => handleSubTabChange('info')}
+              >
+                Thông tin sinh viên
+              </button>
+              <button 
+                className={`nav-tab-btn ${activeSubTab === 'exam' ? 'active' : ''}`}
+                onClick={() => handleSubTabChange('exam')}
+              >
+                Lịch thi
+              </button>
+            </>
+          )}
+          {getSidebarCategory(activeSubTab) === 'timetable' && (
+            <button 
+              className={`nav-tab-btn ${activeSubTab === 'schedule' ? 'active' : ''}`} 
+              onClick={() => handleSubTabChange('schedule')}
+            >
+              Thời khoá biểu
+            </button>
+          )}
+          {getSidebarCategory(activeSubTab) === 'services' && (
+            <>
+              <button 
+                className={`nav-tab-btn ${activeSubTab === 'service_cert' ? 'active' : ''}`}
+                onClick={() => handleSubTabChange('service_cert')}
+              >
+                Đăng ký giấy xác nhận
+              </button>
+              <button 
+                className={`nav-tab-btn ${activeSubTab === 'service_card' ? 'active' : ''}`}
+                onClick={() => handleSubTabChange('service_card')}
+              >
+                Đăng ký in thẻ sinh viên
+              </button>
+              <button 
+                className={`nav-tab-btn ${activeSubTab === 'service_withdraw' ? 'active' : ''}`}
+                onClick={() => handleSubTabChange('service_withdraw')}
+              >
+                Đăng ký rút môn học
+              </button>
+              <button 
+                className={`nav-tab-btn ${activeSubTab === 'service_appeal' ? 'active' : ''}`}
+                onClick={() => handleSubTabChange('service_appeal')}
+              >
+                Đăng ký phúc khảo điểm
+              </button>
+            </>
+          )}
+          {getSidebarCategory(activeSubTab) === 'grades' && (
+            <button 
+              className={`nav-tab-btn ${activeSubTab === 'scoreboard' ? 'active' : ''}`} 
+              onClick={() => handleSubTabChange('scoreboard')}
+            >
+              Bảng điểm
+            </button>
+          )}
         </div>
         <div className="nav-logout-wrapper" style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', paddingRight: '20px' }}>
           <button className="nav-logout-btn" onClick={handleLogout}>Đăng xuất</button>
@@ -146,10 +195,10 @@ function StudentInfo() {
               ☰ Thời khóa biểu
             </button>
             <button 
-              className={`sidebar-item-btn ${activeSubTab === 'service' ? 'active' : ''}`}
-              onClick={() => handleSubTabChange('service')}
+              className={`sidebar-item-btn ${activeSubTab === 'service_cert' || activeSubTab === 'service_card' || activeSubTab === 'service_withdraw' || activeSubTab === 'service_appeal' ? 'active' : ''}`}
+              onClick={() => handleSubTabChange('service_cert')}
             >
-              ☰ Dịch vụ (Giấy xác nhận)
+              ☰ Dịch vụ sinh viên
             </button>
             <button 
               className={`sidebar-item-btn ${activeSubTab === 'scoreboard' ? 'active' : ''}`}
@@ -280,8 +329,14 @@ function StudentInfo() {
             <Timetable />
           ) : activeSubTab === 'exam' ? (
             <ExamSchedule />
-          ) : activeSubTab === 'service' ? (
-            <ServiceStudent />
+          ) : activeSubTab === 'service_cert' ? (
+            <ServiceStudent type="cert" />
+          ) : activeSubTab === 'service_card' ? (
+            <ServiceStudent type="card" />
+          ) : activeSubTab === 'service_withdraw' ? (
+            <ServiceStudent type="withdraw" />
+          ) : activeSubTab === 'service_appeal' ? (
+            <ServiceStudent type="appeal" />
           ) : activeSubTab === 'scoreboard' ? (
             <Scoreboard />
           ) : null}

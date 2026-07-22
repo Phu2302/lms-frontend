@@ -1,21 +1,24 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '../../../../components/Toast/ToastContext';
 import './ChapterTab.css';
 
 /**
+ * Extract YouTube embed URL from various YouTube link formats
+ */
+const getYouTubeEmbedUrl = (url) => {
+  if (!url) return null;
+  const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+  const match = url.match(regExp);
+  if (match && match[2] && match[2].length === 11) {
+    return `https://www.youtube.com/embed/${match[2]}?autoplay=1`;
+  }
+  return null;
+};
+
+/**
  * ChapterTab — Tab "Khóa học" trong CourseDetail.
  * Hiển thị danh sách chapters dạng Accordion với Materials, Quizzes, Forums.
- *
- * Props:
- *  - courseId: string | number
- *  - chapters: array
- *  - openSections: array<boolean>
- *  - hasEditingPrivileges: boolean
- *  - onToggleSection: fn(index)
- *  - onAddChapter: fn
- *  - onDeleteItem: fn(e, type, id)
- *  - onOpenEditMaterial: fn(e, mat)
  */
 function ChapterTab({
   courseId,
@@ -29,6 +32,28 @@ function ChapterTab({
 }) {
   const navigate = useNavigate();
   const { showToast } = useToast();
+  const [activeVideo, setActiveVideo] = useState(null);
+
+  const handleMaterialClick = (mat) => {
+    if (!mat.content_link) {
+      showToast(`Đang mở tài liệu: ${mat.material_name || mat.title}`, 'info');
+      return;
+    }
+
+    const embedUrl = getYouTubeEmbedUrl(mat.content_link);
+    
+    // Nếu là link YouTube hoặc học liệu loại VIDEO -> Xem ngay trên web!
+    if (embedUrl || mat.material_type === 'VIDEO') {
+      setActiveVideo({
+        title: mat.material_name || mat.title || 'Video bài giảng',
+        originalUrl: mat.content_link,
+        embedUrl: embedUrl || mat.content_link
+      });
+    } else {
+      // Đối với tài liệu thông thường (PDF/Doc/Drive link), mở tab mới như bình thường
+      window.open(mat.content_link, '_blank');
+    }
+  };
 
   return (
     <div className="accordion-wrapper">
@@ -48,54 +73,64 @@ function ChapterTab({
 
       {chapters.map((chapter, index) => (
         <div key={chapter.chapter_id || chapter.id || index} className="accordion-item">
-          {/* Header accordion */}
-          <div className="accordion-header" onClick={() => onToggleSection(index)}>
+          {/* Header Chương */}
+          <div
+            className="accordion-header flex-row-justify"
+            onClick={() => onToggleSection(index)}
+          >
             <div className="accordion-header-left">
-              <span className={`accordion-arrow ${openSections[index] !== false ? 'open' : 'closed'}`}>
-                {openSections[index] !== false ? '▼' : '▶'}
+              <span className={`accordion-arrow ${openSections[index] ? 'open' : ''}`}>
+                ▶
               </span>
-              <span className="accordion-title">
-                {chapter.chapter_name || chapter.title || `Chương ${index + 1}`}
+              <span className="accordion-title font-bold">
+                {chapter.chapter_name || chapter.name || `Chương ${index + 1}`}
               </span>
             </div>
+
             {hasEditingPrivileges && (
-              <button
-                className="delete-chapter-btn"
-                onClick={(e) => onDeleteItem(e, 'chapter', chapter.chapter_id)}
-                title="Xóa chương này"
-              >
-                🗑️ Xóa chương
-              </button>
+              <div className="accordion-header-actions" onClick={(e) => e.stopPropagation()}>
+                <button
+                  className="delete-item-btn-small"
+                  onClick={(e) => onDeleteItem(e, 'chapter', chapter.chapter_id || chapter.id)}
+                  title="Xóa chương"
+                >
+                  🗑️ Xóa chương
+                </button>
+              </div>
             )}
           </div>
 
-          {/* Nội dung accordion */}
-          {openSections[index] !== false && (
+          {/* Body Chương (Nội dung bài học) */}
+          {openSections[index] && (
             <div className="accordion-content">
               {hasEditingPrivileges && (
-                <div className="teacher-item-actions">
+                <div className="add-sub-items-bar">
                   <button
-                    className="add-item-btn"
+                    className="add-sub-btn"
                     onClick={() =>
                       navigate(
                         `/lms/course/${courseId}/chapter/${chapter.chapter_id}/add-material?order=${chapter.chapter_order || 1}`
                       )
                     }
                   >
-                    + Thêm Tài liệu/Video
+                    + Thêm Học liệu (Tài liệu / Video)
                   </button>
                   <button
-                    className="add-item-btn"
+                    className="add-sub-btn"
                     onClick={() =>
-                      navigate(`/lms/course/${courseId}/chapter/${chapter.chapter_id}/add-quiz`)
+                      navigate(
+                        `/lms/course/${courseId}/chapter/${chapter.chapter_id}/add-quiz`
+                      )
                     }
                   >
-                    + Thêm bài Quiz
+                    + Thêm Bài kiểm tra (Quiz)
                   </button>
                   <button
-                    className="add-item-btn"
+                    className="add-sub-btn"
                     onClick={() =>
-                      navigate(`/lms/course/${courseId}/chapter/${chapter.chapter_id}/add-forum`)
+                      navigate(
+                        `/lms/course/${courseId}/chapter/${chapter.chapter_id}/add-forum`
+                      )
                     }
                   >
                     + Thêm Diễn đàn thảo luận
@@ -108,19 +143,18 @@ function ChapterTab({
                 <div
                   key={mi}
                   className="content-row flex-row-justify"
-                  onClick={() => {
-                    if (mat.content_link) {
-                      window.open(mat.content_link, '_blank');
-                    } else {
-                      showToast(`Đang mở tài liệu: ${mat.material_name || mat.title}`, 'info');
-                    }
-                  }}
+                  onClick={() => handleMaterialClick(mat)}
                 >
                   <div className="content-row-left">
                     <span className="content-icon">
                       {mat.material_type === 'VIDEO' ? '🎥' : '📄'}
                     </span>
                     <span>{mat.material_name || mat.title || 'Tài liệu'}</span>
+                    {mat.material_type === 'VIDEO' && (
+                      <span style={{ fontSize: '11px', color: '#008b44', marginLeft: '6px', fontWeight: 'bold' }}>
+                        (Xem trực tiếp)
+                      </span>
+                    )}
                   </div>
                   {hasEditingPrivileges && (
                     <div className="content-row-actions" onClick={(e) => e.stopPropagation()}>
@@ -148,27 +182,22 @@ function ChapterTab({
                 <div
                   key={qi}
                   className="content-row flex-row-justify"
-                  onClick={() => navigate(`/lms/quiz/${quiz.quiz_id || quiz.id}`)}
+                  onClick={() =>
+                    navigate(
+                      `/lms/course/${courseId}/chapter/${chapter.chapter_id}/quiz/${quiz.quiz_id || quiz.id}`
+                    )
+                  }
                 >
                   <div className="content-row-left">
-                    <span className="content-icon">📝</span>
-                    <span>{quiz.quiz_name || quiz.title || 'Quiz'}</span>
+                    <span className="content-icon">✏️</span>
+                    <span>{quiz.quiz_title || quiz.title || 'Bài kiểm tra'}</span>
                   </div>
                   {hasEditingPrivileges && (
                     <div className="content-row-actions" onClick={(e) => e.stopPropagation()}>
                       <button
-                        className="edit-item-btn-small"
-                        onClick={() =>
-                          navigate(`/lms/course/${courseId}/quiz/${quiz.quiz_id || quiz.id}/edit`)
-                        }
-                        title="Sửa Quiz"
-                      >
-                        ✏️ Sửa
-                      </button>
-                      <button
                         className="delete-item-btn-small"
                         onClick={(e) => onDeleteItem(e, 'quiz', quiz.quiz_id || quiz.id)}
-                        title="Xóa Quiz"
+                        title="Xóa quiz"
                       >
                         🗑️ Xóa
                       </button>
@@ -183,54 +212,81 @@ function ChapterTab({
                   key={fi}
                   className="content-row flex-row-justify"
                   onClick={() =>
-                    navigate(`/lms/course/${courseId}/forum/${forum.forum_id || forum.id}`)
+                    navigate(
+                      `/lms/course/${courseId}/chapter/${chapter.chapter_id}/forum/${forum.forum_id || forum.id}`
+                    )
                   }
                 >
                   <div className="content-row-left">
                     <span className="content-icon">💬</span>
-                    <span>{forum.forum_name || forum.title || 'Forum'}</span>
+                    <span>{forum.title || forum.forum_title || 'Diễn đàn thảo luận'}</span>
                   </div>
                   {hasEditingPrivileges && (
-                    <button
-                      className="delete-item-btn-small"
-                      onClick={(e) => onDeleteItem(e, 'forum', forum.forum_id || forum.id)}
-                      title="Xóa diễn đàn"
-                    >
-                      🗑️ Xóa
-                    </button>
+                    <div className="content-row-actions" onClick={(e) => e.stopPropagation()}>
+                      <button
+                        className="delete-item-btn-small"
+                        onClick={(e) => onDeleteItem(e, 'forum', forum.forum_id || forum.id)}
+                        title="Xóa forum"
+                      >
+                        🗑️ Xóa
+                      </button>
+                    </div>
                   )}
                 </div>
               ))}
 
-              {/* Assignments */}
-              {(chapter.assignments || []).map((assign, ai) => (
-                <div
-                  key={ai}
-                  className="content-row"
-                  onClick={() =>
-                    navigate(`/lms/assignment/${assign.assignment_id || assign.id}`)
-                  }
-                >
-                  <span className="content-icon">📤</span>
-                  <span>{assign.assignment_name || assign.title || 'Bài tập'}</span>
-                </div>
-              ))}
-
-              {/* Chương trống */}
-              {!(
-                chapter.materials?.length ||
-                chapter.quizzes?.length ||
-                chapter.forums?.length ||
-                chapter.assignments?.length
-              ) && (
-                <div className="empty-content-text">
-                  Chưa có tài liệu hoặc hoạt động nào cho chương này.
+              {(!chapter.materials?.length &&
+                !chapter.quizzes?.length &&
+                !chapter.forums?.length) && (
+                <div className="empty-sub-content">
+                  Chưa có nội dung nào trong chương này.
                 </div>
               )}
             </div>
           )}
         </div>
       ))}
+
+      {/* Modern Video Player Modal */}
+      {activeVideo && (
+        <div className="video-modal-overlay" onClick={() => setActiveVideo(null)}>
+          <div className="video-modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="video-modal-header">
+              <h3 className="video-modal-title">
+                🎥 {activeVideo.title}
+              </h3>
+              <button 
+                className="video-modal-close-btn" 
+                onClick={() => setActiveVideo(null)}
+                title="Đóng video"
+              >
+                ×
+              </button>
+            </div>
+            
+            <div className="video-player-container">
+              <iframe
+                src={activeVideo.embedUrl}
+                title={activeVideo.title}
+                className="video-player-iframe"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                allowFullScreen
+              />
+            </div>
+
+            <div className="video-modal-footer">
+              <a 
+                href={activeVideo.originalUrl} 
+                target="_blank" 
+                rel="noopener noreferrer" 
+                className="video-open-external-btn"
+              >
+                Mở trong ứng dụng YouTube ↗
+              </a>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
