@@ -20,7 +20,7 @@ function CourseRegistration() {
     }
     localStorage.removeItem('token');
     localStorage.removeItem('user');
-    navigate('/login');
+    navigate('/');
   };
 
   // State quản lý xem đang ở màn hình danh sách đợt hay chi tiết 1 đợt

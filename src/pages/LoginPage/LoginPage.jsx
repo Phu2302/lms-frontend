@@ -35,11 +35,12 @@ function LoginPage() {
         return;
       }
 
-      if (userRole === '2' || userRole === '3') {
-        if (targetService === 'Thông tin sinh viên' || targetService === 'Đăng ký in giấy xác nhận') {
-          navigate(userRole === '2' ? '/online-grading' : '/lms', { replace: true });
-          return;
-        }
+      if (targetService === 'Nhập điểm trực tuyến') {
+        navigate('/online-grading', { replace: true });
+        return;
+      } else if (targetService === 'Quản lý giảng dạy') {
+        navigate('/teaching-support', { replace: true });
+        return;
       }
       if (targetService === 'Các khóa học của tôi') {
         navigate('/lms/course', { replace: true });
@@ -95,8 +96,10 @@ function LoginPage() {
         navigate('/student-info?tab=service', { state: { defaultTab: 'service' } });
       } else if (targetService === 'Đăng ký môn học') {
         navigate('/course-registration');
-      } else if (userRole === '2') {
+      } else if (targetService === 'Nhập điểm trực tuyến') {
         navigate('/online-grading');
+      } else if (targetService === 'Quản lý giảng dạy') {
+        navigate('/teaching-support');
       } else {
         navigate('/lms');
       }

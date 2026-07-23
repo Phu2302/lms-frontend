@@ -54,7 +54,7 @@ function StudentInfo() {
     }
     localStorage.removeItem('token');
     localStorage.removeItem('user');
-    navigate('/login');
+    navigate('/');
   };
 
   // Dữ liệu sinh viên từ API

@@ -32,48 +32,59 @@
 }
 
 .classes-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  width: 100%;
+  max-width: 900px;
+  margin: 0 auto;
 }
 
 .class-card {
-  background: #fff;
-  border: 1px solid #e2e8f0;
-  border-radius: 8px;
-  padding: 20px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  background: #ffffff;
+  border: 1px solid #cbd5e0;
+  border-radius: 3px;
+  padding: 16px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   cursor: pointer;
-  transition: transform 0.2s, box-shadow 0.2s;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+  transition: opacity 0.2s ease;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .class-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-  border-color: #3182ce;
+  opacity: 0.7;
+  border-color: #cbd5e0;
+  transform: none;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
 }
 
 .class-card h3 {
-  margin: 0 0 10px 0;
-  color: #2d3748;
-  font-size: 18px;
+  margin: 0 0 6px 0;
+  color: #1a202c;
+  font-size: 16px;
+  font-weight: 600;
 }
 
 .class-card p {
-  color: #718096;
-  margin: 0 0 15px 0;
-  font-size: 14px;
+  color: #4a5568;
+  margin: 0;
+  font-size: 13px;
 }
 
 .select-class-btn {
-  width: 100%;
-  padding: 10px;
-  background: #ebf8ff;
-  color: #3182ce;
+  padding: 8px 18px;
+  background: #008b44;
+  color: #ffffff;
   border: none;
-  border-radius: 6px;
+  border-radius: 2px;
   font-weight: 600;
+  font-size: 13px;
   cursor: pointer;
+  white-space: nowrap;
 }
 
 .select-class-btn:hover {
@@ -109,30 +120,62 @@
 
 .back-btn-small {
   background: #edf2f7;
-  border: none;
+  border: 1px solid #cbd5e0;
   padding: 8px 16px;
-  border-radius: 6px;
+  border-radius: 3px;
   cursor: pointer;
-  font-weight: 500;
+  font-weight: 600;
   color: #4a5568;
+  font-size: 13px;
 }
 
-.save-grades-btn {
+.back-btn-small:hover {
+  background: #e2e8f0;
+}
+
+.save-grades-btn, .btn-save {
   background: #008b44;
   color: #fff;
   border: none;
-  padding: 8px 16px;
-  border-radius: 6px;
+  padding: 8px 18px;
+  border-radius: 3px;
   font-weight: bold;
+  font-size: 13px;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+.save-grades-btn:hover, .btn-save:hover {
+  opacity: 0.85;
+}
+.save-grades-btn:disabled, .btn-save:disabled {
+  background: #a0aec0;
+  cursor: not-allowed;
+}
+
+.sheet-actions {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 12px;
+  margin-top: 24px;
+  padding-top: 16px;
+  border-top: 1px solid #e2e8f0;
+}
+
+.btn-cancel {
+  background: #edf2f7;
+  color: #4a5568;
+  border: 1px solid #cbd5e0;
+  border-radius: 3px;
+  padding: 8px 18px;
+  font-weight: 600;
+  font-size: 13px;
   cursor: pointer;
   transition: background 0.2s;
 }
-.save-grades-btn:hover {
-  background: #007036;
-}
-.save-grades-btn:disabled {
-  background: #9ae6b4;
-  cursor: not-allowed;
+
+.btn-cancel:hover {
+  background: #e2e8f0;
 }
 
 .table-responsive {

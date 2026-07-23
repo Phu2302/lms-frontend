@@ -38,15 +38,23 @@ function HomePage() {
         return;
       }
       if (serviceName === 'Quản lý giảng dạy') {
+        if (userRole === '1') {
+          showToast('Khu vực "Hỗ trợ & Quản lý giảng dạy" chỉ dành riêng cho Giảng viên và Admin!', 'error');
+          return;
+        }
         navigate('/teaching-support');
+        return;
+      }
+      if (serviceName === 'Nhập điểm trực tuyến') {
+        if (userRole === '1') {
+          showToast('Chức năng "Nhập điểm trực tuyến" chỉ dành riêng cho Giảng viên và Admin!', 'error');
+          return;
+        }
+        navigate('/online-grading');
         return;
       }
       if (serviceName === 'LMS') {
         navigate('/lms');
-        return;
-      }
-      if (serviceName === 'Nhập điểm trực tuyến') {
-        navigate('/online-grading');
         return;
       }
     }

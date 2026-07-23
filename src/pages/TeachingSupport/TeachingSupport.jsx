@@ -17,6 +17,17 @@ function TeachingSupport() {
     setSearchParams({ tab: tabName }, { replace: true });
   };
 
+  const handleLogout = async () => {
+    try {
+      await logoutAPI();
+    } catch (err) {
+      console.warn('Logout API error:', err);
+    }
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    navigate('/');
+  };
+
   // States
   const [announcements, setAnnouncements] = useState([]);
   const [tickets, setTickets] = useState([]);
@@ -24,9 +35,21 @@ function TeachingSupport() {
 
   // States for new ticket modal
   const [showNewTicketModal, setShowNewTicketModal] = useState(false);
-  const [ticketType, setTicketType] = useState('Mở khóa điểm');
+  const [ticketType, setTicketType] = useState('Yêu cầu chỉnh sửa điểm');
   const [ticketContent, setTicketContent] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    const userString = localStorage.getItem('user');
+    const currentUser = userString ? JSON.parse(userString) : null;
+    const userRole = String(currentUser?.role || '1');
+
+    if (userRole === '1') {
+      showToast('Khu vực "Hỗ trợ & Quản lý giảng dạy" chỉ dành riêng cho Giảng viên và Admin!', 'error');
+      navigate('/', { replace: true });
+      return;
+    }
+  }, [navigate]);
 
   useEffect(() => {
     if (activeTab === 'announcements') {
@@ -72,16 +95,20 @@ function TeachingSupport() {
     setIsSubmitting(true);
     try {
       await createTeacherTicketAPI({
-        type: ticketType,
+        ticket_type: ticketType,
         content: ticketContent
       });
-      showToast('Đã gửi yêu cầu thành công!', 'success');
+      showToast('Đã gửi phiếu yêu cầu thành công!', 'success');
       setShowNewTicketModal(false);
       setTicketContent('');
       fetchTickets();
     } catch (err) {
       console.warn('Lỗi tạo phiếu yêu cầu:', err);
-      showToast('Hệ thống Backend chưa sẵn sàng (Chưa có API). Vui lòng cấu hình API POST /support/tickets.', 'error');
+      if (err.response?.status === 500) {
+        showToast('Lỗi 500 CSDL Backend: Bảng SupportTickets chưa có trong MySQL. Vui lòng chạy lệnh CREATE TABLE SupportTickets trong MySQL!', 'error');
+      } else {
+        showToast(err.response?.data?.error || 'Lỗi khi gửi phiếu yêu cầu. Vui lòng kiểm tra lại.', 'error');
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -89,7 +116,30 @@ function TeachingSupport() {
 
   return (
     <div className="teaching-support-container">
-      <Header view="teacher" />
+      <nav className="teacher-top-nav" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 24px', background: '#008b44', color: '#fff' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+          <div className="nav-brand-box" onClick={() => navigate('/')} style={{ cursor: 'pointer', fontWeight: 'bold', fontSize: '20px' }}>
+            myBH
+          </div>
+          <span style={{ fontSize: '15px', fontWeight: 'bold', borderLeft: '1px solid rgba(255,255,255,0.4)', paddingLeft: '15px' }}>
+            HỖ TRỢ & QUẢN LÝ GIẢNG DẠY
+          </span>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <button 
+            onClick={() => navigate('/')} 
+            style={{ background: '#ffffff', color: '#008b44', border: 'none', borderRadius: '0px', padding: '6px 14px', cursor: 'pointer', fontWeight: 'bold', fontSize: '13px' }}
+          >
+            Trang chủ
+          </button>
+          <button 
+            onClick={handleLogout} 
+            style={{ background: '#e53e3e', color: '#fff', border: 'none', borderRadius: '0px', padding: '6px 14px', cursor: 'pointer', fontWeight: 'bold', fontSize: '13px' }}
+          >
+            Đăng xuất
+          </button>
+        </div>
+      </nav>
 
       <div className="teaching-support-body">
 
@@ -175,7 +225,7 @@ function TeachingSupport() {
                       {tickets.map((t, idx) => (
                         <tr key={idx}>
                           <td>{t.ticket_id || `#TCK-${idx+1}`}</td>
-                          <td><strong>{t.type}</strong></td>
+                          <td><strong>{t.ticket_type || t.type}</strong></td>
                           <td>{t.content}</td>
                           <td>
                             <span className={`status-badge ${t.status === 'Đã xử lý' ? 'resolved' : 'pending'}`}>
@@ -220,11 +270,12 @@ function TeachingSupport() {
               <div className="form-group">
                 <label>Loại yêu cầu</label>
                 <select value={ticketType} onChange={(e) => setTicketType(e.target.value)}>
-                  <option value="Mở khóa điểm">Mở khóa điểm trực tuyến</option>
-                  <option value="Đổi phòng học/Dạy bù">Đổi phòng học / Dạy bù</option>
-                  <option value="Báo cáo sự cố thiết bị">Báo cáo sự cố thiết bị</option>
-                  <option value="Đăng ký lịch thi">Đăng ký lịch thi</option>
-                  <option value="Khác">Khác...</option>
+                  <option value="Yêu cầu chỉnh sửa điểm">Yêu cầu chỉnh sửa điểm / Mở khóa điểm</option>
+                  <option value="Hỗ trợ kỹ thuật">Hỗ trợ kỹ thuật</option>
+                  <option value="Đề nghị cấp tài nguyên">Đề nghị cấp tài nguyên</option>
+                  <option value="Phản hồi về lịch dạy">Phản hồi về lịch dạy / Đổi phòng học</option>
+                  <option value="Báo cáo sự cố lớp học">Báo cáo sự cố lớp học</option>
+                  <option value="Khác">Khác</option>
                 </select>
               </div>
 
