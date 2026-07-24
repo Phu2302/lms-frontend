@@ -64,3 +64,14 @@
   color: #008b44;
   border-color: #008b44;
 }
+
+/* Kiểu cho tiêu đề phụ Admin trong Cột 2 */
+.admin-section-title {
+  color: #005a2b;
+  font-size: 15px;
+  font-weight: bold;
+  margin-top: 18px;
+  margin-bottom: 12px;
+  padding-top: 12px;
+  border-top: 1px dashed #ccc;
+}

@@ -115,10 +115,41 @@ function AddMaterial() {
             </div>
 
             <div className="form-group-modern">
-              <label htmlFor="material-link">Đường dẫn liên kết (Link tải/Link xem):</label>
+              <label htmlFor="material-file">Upload file tài liệu từ máy tính (.PDF / .DOCX / .ZIP / .PNG):</label>
+              <input
+                id="material-file"
+                type="file"
+                onChange={(e) => {
+                  const file = e.target.files[0];
+                  if (file) {
+                    const currentTitle = title || file.name;
+                    if (!title) setTitle(file.name);
+                    const reader = new FileReader();
+                    reader.onload = (evt) => {
+                      const dataUrl = evt.target.result;
+                      try {
+                        localStorage.setItem(`lms_file_${file.name}`, dataUrl);
+                        localStorage.setItem(`lms_file_${encodeURIComponent(file.name)}`, dataUrl);
+                        localStorage.setItem(`lms_file_${currentTitle}`, dataUrl);
+                        localStorage.setItem(`lms_file_${encodeURIComponent(currentTitle)}`, dataUrl);
+                        localStorage.setItem(`lms_file_last_uploaded`, dataUrl);
+                      } catch (err) {
+                        console.warn('LocalStorage full:', err);
+                      }
+                      setContentLink(`https://lms.bk.edu.vn/files/${encodeURIComponent(file.name)}`);
+                    };
+                    reader.readAsDataURL(file);
+                  }
+                }}
+                disabled={loading}
+              />
+            </div>
+
+            <div className="form-group-modern">
+              <label htmlFor="material-link">Hoặc Nhập đường dẫn liên kết (Link Google Drive / Youtube / Web):</label>
               <input
                 id="material-link"
-                type="url"
+                type="text"
                 value={contentLink}
                 onChange={(e) => setContentLink(e.target.value)}
                 placeholder="https://example.com/..."

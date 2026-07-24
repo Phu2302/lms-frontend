@@ -1,0 +1,439 @@
+.admin-portal-layout {
+  min-height: 100vh;
+  background-color: #ffffff;
+  font-family: Arial, sans-serif;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Header Admin phẳng đồng bộ BK LMS */
+.admin-top-header {
+  height: 60px;
+  background-color: #008b44;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 25px;
+  border-bottom: 2px solid #005a2b;
+}
+
+.admin-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.admin-brand-logo {
+  background-color: #ffffff;
+  color: #008b44;
+  font-weight: bold;
+  padding: 3px 8px;
+  border-radius: 0px;
+  font-size: 15px;
+}
+
+.admin-brand-title {
+  font-size: 16px;
+  font-weight: bold;
+  color: #ffffff;
+}
+
+.admin-header-right {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.admin-user-name {
+  font-size: 13px;
+  color: #ffffff;
+}
+
+.admin-role-badge {
+  background-color: #005a2b;
+  color: #ffffff;
+  padding: 2px 8px;
+  border-radius: 0px;
+  font-size: 11px;
+  font-weight: bold;
+}
+
+.admin-home-btn {
+  background-color: #ffffff;
+  color: #008b44;
+  border: 1px solid #008b44;
+  padding: 5px 12px;
+  border-radius: 0px;
+  font-weight: bold;
+  font-size: 13px;
+  cursor: pointer;
+}
+.admin-home-btn:hover {
+  background-color: #e8f5e9;
+}
+
+.admin-logout-btn {
+  background: transparent;
+  border: 1px solid #ffffff;
+  color: #ffffff;
+  padding: 5px 12px;
+  border-radius: 0px;
+  font-size: 13px;
+  cursor: pointer;
+  font-weight: bold;
+}
+.admin-logout-btn:hover {
+  background-color: rgba(255, 255, 255, 0.15);
+}
+
+/* Container phẳng vuông vắn */
+.admin-main-container {
+  max-width: 1250px;
+  margin: 25px auto;
+  width: 95%;
+  flex: 1;
+}
+
+/* Tabs navigation phẳng chuẩn UI */
+.admin-tabs-nav {
+  display: flex;
+  gap: 0px;
+  margin-bottom: 20px;
+  border-bottom: 2px solid #008b44;
+}
+
+.admin-tab-btn {
+  padding: 12px 20px;
+  background-color: #f8f9fa;
+  border: 1px solid #e2e8f0;
+  border-bottom: none;
+  border-radius: 0px;
+  font-size: 14px;
+  font-weight: bold;
+  color: #555555;
+  cursor: pointer;
+  margin-right: 4px;
+  transition: all 0.15s ease;
+}
+
+.admin-tab-btn:hover {
+  background-color: #e8f5e9;
+  color: #008b44;
+}
+
+.admin-tab-btn.active {
+  background-color: #008b44;
+  color: #ffffff;
+  border-color: #008b44;
+}
+
+/* Content Card phẳng vuông vắn */
+.admin-content-card {
+  background-color: #ffffff;
+  border-radius: 0px;
+  padding: 25px;
+  border: 1px solid #e2e8f0;
+}
+
+.panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid #e5e7eb;
+  padding-bottom: 12px;
+  margin-bottom: 20px;
+}
+
+.panel-header h2 {
+  font-size: 17px;
+  color: #005a2b;
+  margin: 0;
+  font-weight: bold;
+}
+
+/* Controls */
+.admin-select {
+  padding: 6px 12px;
+  border-radius: 0px;
+  border: 1px solid #cbd5e0;
+  font-size: 13px;
+  margin-left: 10px;
+}
+
+.filter-group label {
+  font-size: 13px;
+  color: #333333;
+}
+
+/* Table */
+.admin-table-wrapper {
+  overflow-x: auto;
+}
+
+.admin-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.admin-table th {
+  background-color: #e8f5e9;
+  color: #005a2b;
+  padding: 10px 14px;
+  text-align: left;
+  border: 1px solid #c8e6c9;
+  font-weight: bold;
+}
+
+.admin-table td {
+  padding: 12px 14px;
+  border: 1px solid #e2e8f0;
+  color: #333333;
+}
+
+.admin-table tr:hover {
+  background-color: #f8fafc;
+}
+
+/* Tags & Badges phẳng */
+.service-type-tag {
+  background-color: #e8f5e9;
+  color: #007236;
+  padding: 3px 8px;
+  border-radius: 0px;
+  font-size: 12px;
+  font-weight: bold;
+  border: 1px solid #c8e6c9;
+}
+
+.status-badge {
+  padding: 3px 8px;
+  border-radius: 0px;
+  font-size: 12px;
+  font-weight: bold;
+  display: inline-block;
+}
+
+.status-badge.pending {
+  background-color: #fef3c7;
+  color: #92400e;
+  border: 1px solid #fcd34d;
+}
+
+.status-badge.approved {
+  background-color: #d1fae5;
+  color: #065f46;
+  border: 1px solid #a7f3d0;
+}
+
+.status-badge.rejected {
+  background-color: #fee2e2;
+  color: #991b1b;
+  border: 1px solid #fca5a5;
+}
+
+/* Buttons in table */
+.action-btn-group {
+  display: flex;
+  gap: 6px;
+}
+
+.btn-approve {
+  background-color: #008b44;
+  color: #ffffff;
+  border: none;
+  padding: 5px 10px;
+  border-radius: 0px;
+  cursor: pointer;
+  font-weight: bold;
+  font-size: 12px;
+}
+.btn-approve:hover {
+  background-color: #007236;
+}
+
+.btn-reject {
+  background-color: #dc2626;
+  color: #ffffff;
+  border: none;
+  padding: 5px 10px;
+  border-radius: 0px;
+  cursor: pointer;
+  font-weight: bold;
+  font-size: 12px;
+}
+.btn-reject:hover {
+  background-color: #b91c1c;
+}
+
+.btn-remind {
+  background-color: #d97706;
+  color: #ffffff;
+  border: none;
+  padding: 5px 10px;
+  border-radius: 0px;
+  cursor: pointer;
+  font-weight: bold;
+  font-size: 12px;
+}
+.btn-remind:hover {
+  background-color: #b45309;
+}
+
+.btn-view {
+  background-color: #008b44;
+  color: #ffffff;
+  border: none;
+  padding: 5px 10px;
+  border-radius: 0px;
+  cursor: pointer;
+  font-weight: bold;
+  font-size: 12px;
+}
+.btn-view:hover {
+  background-color: #007236;
+}
+
+.btn-increase {
+  background-color: #008b44;
+  color: #ffffff;
+  border: none;
+  padding: 5px 10px;
+  border-radius: 0px;
+  cursor: pointer;
+  font-weight: bold;
+  font-size: 12px;
+}
+.btn-increase:hover {
+  background-color: #007236;
+}
+
+/* Stats Cards phẳng */
+.admin-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 15px;
+}
+
+.stat-card {
+  background-color: #f9fafb;
+  border: 1px solid #e5e7eb;
+  padding: 16px 20px;
+  border-radius: 0px;
+}
+
+.stat-card.green {
+  background-color: #f0fdf4;
+  border-color: #bbf7d0;
+}
+
+.stat-card.orange {
+  background-color: #fffbe6;
+  border-color: #ffe58f;
+}
+
+.stat-value {
+  font-size: 24px;
+  font-weight: bold;
+  color: #005a2b;
+}
+
+.stat-label {
+  font-size: 13px;
+  color: #6b7280;
+  margin-top: 4px;
+}
+
+/* Adjust search box */
+.adjust-search-box {
+  display: flex;
+  gap: 10px;
+}
+
+.admin-input-search {
+  flex: 1;
+  padding: 8px 12px;
+  border-radius: 0px;
+  border: 1px solid #cbd5e0;
+  font-size: 13px;
+}
+
+.btn-search {
+  background-color: #008b44;
+  color: #ffffff;
+  border: none;
+  padding: 8px 18px;
+  border-radius: 0px;
+  font-weight: bold;
+  font-size: 13px;
+  cursor: pointer;
+}
+.btn-search:hover {
+  background-color: #007236;
+}
+
+/* Subtabs Navigation (Duyệt Dịch Vụ & Quản Lý Đào Tạo) */
+.admin-subtabs-nav {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 20px;
+  border-bottom: 1px solid #e5e7eb;
+  padding-bottom: 10px;
+}
+
+.admin-subtab-btn {
+  padding: 8px 16px;
+  background-color: #f3f4f6;
+  border: 1px solid #d1d5db;
+  border-radius: 0px;
+  font-size: 13px;
+  font-weight: bold;
+  color: #4b5563;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.admin-subtab-btn:hover {
+  background-color: #e8f5e9;
+  color: #008b44;
+  border-color: #008b44;
+}
+
+.admin-subtab-btn.active {
+  background-color: #008b44;
+  color: #ffffff;
+  border-color: #008b44;
+}
+
+/* Modal Overlay & Box */
+.admin-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.admin-modal-box {
+  background-color: #ffffff;
+  padding: 25px;
+  border: 2px solid #008b44;
+  width: 90%;
+  max-width: 550px;
+  border-radius: 0px;
+}
+
+.admin-modal-box h3 {
+  margin-top: 0;
+  color: #005a2b;
+  font-size: 16px;
+  border-bottom: 1px solid #e5e7eb;
+  padding-bottom: 10px;
+  margin-bottom: 15px;
+}

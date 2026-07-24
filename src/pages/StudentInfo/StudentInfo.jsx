@@ -68,9 +68,9 @@ function StudentInfo() {
     const currentUser = userString ? JSON.parse(userString) : null;
     const userRole = String(currentUser?.role || '1');
 
-    if (userRole === '2' || userRole === '3') {
-      showToast('Trang "Thông tin sinh viên" chỉ dành riêng cho Sinh viên. Giảng viên và Admin không được phép truy cập!', 'error');
-      navigate(userRole === '2' ? '/online-grading' : '/lms', { replace: true });
+    if (userRole === '2') {
+      showToast('Trang "Thông tin sinh viên" không dành cho Giảng viên!', 'error');
+      navigate('/online-grading', { replace: true });
       return;
     }
 
@@ -92,8 +92,7 @@ function StudentInfo() {
   };
 
   const getSidebarCategory = (tab) => {
-    if (tab === 'info' || tab === 'exam') return 'student';
-    if (tab === 'schedule') return 'timetable';
+    if (tab === 'info' || tab === 'exam' || tab === 'schedule') return 'student';
     if (tab === 'service_cert' || tab === 'service_card' || tab === 'service_withdraw' || tab === 'service_appeal') return 'services';
     if (tab === 'scoreboard') return 'grades';
     return 'student';
@@ -117,20 +116,18 @@ function StudentInfo() {
                 Thông tin sinh viên
               </button>
               <button
+                className={`nav-tab-btn ${activeSubTab === 'schedule' ? 'active' : ''}`}
+                onClick={() => handleSubTabChange('schedule')}
+              >
+                Thời khóa biểu
+              </button>
+              <button
                 className={`nav-tab-btn ${activeSubTab === 'exam' ? 'active' : ''}`}
                 onClick={() => handleSubTabChange('exam')}
               >
                 Lịch thi
               </button>
             </>
-          )}
-          {getSidebarCategory(activeSubTab) === 'timetable' && (
-            <button
-              className={`nav-tab-btn ${activeSubTab === 'schedule' ? 'active' : ''}`}
-              onClick={() => handleSubTabChange('schedule')}
-            >
-              Thời khoá biểu
-            </button>
           )}
           {getSidebarCategory(activeSubTab) === 'services' && (
             <>
@@ -190,16 +187,10 @@ function StudentInfo() {
 
           <div className="sidebar-menu-list">
             <button
-              className={`sidebar-item-btn ${activeSubTab === 'info' || activeSubTab === 'exam' ? 'active' : ''}`}
+              className={`sidebar-item-btn ${activeSubTab === 'info' || activeSubTab === 'exam' || activeSubTab === 'schedule' ? 'active' : ''}`}
               onClick={() => handleSubTabChange('info')}
             >
               ☰ Sinh viên
-            </button>
-            <button
-              className={`sidebar-item-btn ${activeSubTab === 'schedule' ? 'active' : ''}`}
-              onClick={() => handleSubTabChange('schedule')}
-            >
-              ☰ Thời khóa biểu
             </button>
             <button
               className={`sidebar-item-btn ${activeSubTab === 'service_cert' || activeSubTab === 'service_card' || activeSubTab === 'service_withdraw' || activeSubTab === 'service_appeal' ? 'active' : ''}`}

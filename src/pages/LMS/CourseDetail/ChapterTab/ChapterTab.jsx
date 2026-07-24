@@ -35,24 +35,68 @@ function ChapterTab({
   const [activeVideo, setActiveVideo] = useState(null);
 
   const handleMaterialClick = (mat) => {
-    if (!mat.content_link) {
-      showToast(`Đang mở tài liệu: ${mat.material_name || mat.title}`, 'info');
+    const fileName = mat.title || mat.material_name || 'TaiLieu_BaiGiang.pdf';
+    const linkStr = mat.content_link || '';
+
+    // 1. Kiểm tra nếu là Video YouTube
+    const embedUrl = getYouTubeEmbedUrl(linkStr);
+    if (embedUrl || mat.material_type === 'VIDEO') {
+      setActiveVideo({
+        title: fileName,
+        originalUrl: linkStr,
+        embedUrl: embedUrl || linkStr
+      });
       return;
     }
 
-    const embedUrl = getYouTubeEmbedUrl(mat.content_link);
-    
-    // Nếu là link YouTube hoặc học liệu loại VIDEO -> Xem ngay trên web!
-    if (embedUrl || mat.material_type === 'VIDEO') {
-      setActiveVideo({
-        title: mat.material_name || mat.title || 'Video bài giảng',
-        originalUrl: mat.content_link,
-        embedUrl: embedUrl || mat.content_link
-      });
-    } else {
-      // Đối với tài liệu thông thường (PDF/Doc/Drive link), mở tab mới như bình thường
-      window.open(mat.content_link, '_blank');
+    // 2. Kiểm tra xem file có lưu trong đệm bộ nhớ localStorage theo bất kỳ tên key nào không
+    let extractedName = '';
+    if (linkStr.includes('/files/')) {
+      extractedName = decodeURIComponent(linkStr.split('/files/')[1] || '');
     }
+
+    const matId = mat.material_id || mat.id;
+    const savedDataUrl = 
+      (matId && localStorage.getItem(`lms_material_id_${matId}`)) ||
+      (extractedName && localStorage.getItem(`lms_file_${extractedName}`)) ||
+      (extractedName && localStorage.getItem(`lms_file_${encodeURIComponent(extractedName)}`)) ||
+      localStorage.getItem(`lms_file_${fileName}`) ||
+      localStorage.getItem(`lms_file_${encodeURIComponent(fileName)}`) ||
+      (mat.title && localStorage.getItem(`lms_file_${mat.title}`)) ||
+      (mat.material_name && localStorage.getItem(`lms_file_${mat.material_name}`)) ||
+      localStorage.getItem('lms_file_last_uploaded');
+
+    if (savedDataUrl) {
+      triggerFileDownload(savedDataUrl, extractedName || fileName);
+      return;
+    }
+
+    if (linkStr.startsWith('data:')) {
+      triggerFileDownload(linkStr, fileName);
+      return;
+    }
+
+    if (linkStr.startsWith('http://') || linkStr.startsWith('https://')) {
+      window.open(linkStr, '_blank');
+      return;
+    }
+
+    // 4. Nếu tài liệu chưa được Upload đính kèm file thật
+    if (hasEditingPrivileges) {
+      showToast(`Tài liệu "${fileName}" chưa đính kèm file gốc. Giảng viên hãy bấm nút "✏️ Sửa" để Upload file từ máy tính.`, 'info');
+    } else {
+      showToast(`Giảng viên chưa đính kèm file tài liệu thực tế cho "${fileName}".`, 'info');
+    }
+  };
+
+  const triggerFileDownload = (url, name) => {
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = name;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    showToast(`Đã tải xuống tài liệu: ${name}`, 'success');
   };
 
   return (

@@ -249,11 +249,64 @@ function TeachingSupport() {
             {!isLoading && activeTab === 'resources' && (
               <div className="tab-pane">
                 <h2>Biểu mẫu & Tài liệu Dành cho Giảng viên</h2>
-                <p className="tab-subtitle">Các tài liệu, quy chế và biểu mẫu chuẩn từ Phòng Đào Tạo.</p>
-                
-                <div className="empty-state">
-                  Chưa có biểu mẫu hoặc tài liệu nào được tải lên từ Phòng Đào Tạo.
-                </div>
+                <p className="tab-subtitle">Các tài liệu, quy chế và biểu mẫu chuẩn phát hành từ Phòng Đào Tạo.</p>
+
+                {(() => {
+                  const saved = localStorage.getItem('system_resources');
+                  const list = saved ? JSON.parse(saved) : [];
+                  const teacherResources = list.filter(r => r.category === 'Giảng viên' || r.category === 'Tất cả');
+
+                  if (teacherResources.length === 0) {
+                    return (
+                      <div className="empty-state">
+                        Chưa có biểu mẫu hoặc tài liệu nào được tải lên từ Phòng Đào Tạo.
+                      </div>
+                    );
+                  }
+
+                  return (
+                    <div style={{ marginTop: '15px' }}>
+                      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }}>
+                        <thead>
+                          <tr style={{ background: '#e8f5e9', color: '#005a2b', textAlign: 'left' }}>
+                            <th style={{ padding: '10px 12px', border: '1px solid #c8e6c9' }}>Tên tài liệu / Biểu mẫu</th>
+                            <th style={{ padding: '10px 12px', border: '1px solid #c8e6c9' }}>Dung lượng</th>
+                            <th style={{ padding: '10px 12px', border: '1px solid #c8e6c9' }}>Ngày phát hành</th>
+                            <th style={{ padding: '10px 12px', border: '1px solid #c8e6c9' }}>Tải về</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {teacherResources.map((item) => (
+                            <tr key={item.id}>
+                              <td style={{ padding: '10px 12px', border: '1px solid #e2e8f0' }}><strong>{item.name}</strong></td>
+                              <td style={{ padding: '10px 12px', border: '1px solid #e2e8f0' }}>{item.size}</td>
+                              <td style={{ padding: '10px 12px', border: '1px solid #e2e8f0' }}>{item.date}</td>
+                              <td style={{ padding: '10px 12px', border: '1px solid #e2e8f0' }}>
+                                {item.fileUrl ? (
+                                  <a
+                                    href={item.fileUrl}
+                                    download={item.fileName || `${item.name}.pdf`}
+                                    style={{ background: '#008b44', color: '#fff', padding: '5px 12px', borderRadius: '4px', fontSize: '13px', fontWeight: 'bold', textDecoration: 'none', display: 'inline-block' }}
+                                    onClick={() => showToast(`Đang tải xuống biểu mẫu: ${item.name}`, 'info')}
+                                  >
+                                    📥 Tải về
+                                  </a>
+                                ) : (
+                                  <button
+                                    onClick={() => showToast(`Đang tải xuống biểu mẫu: ${item.name}`, 'info')}
+                                    style={{ background: '#008b44', color: '#fff', border: 'none', padding: '5px 12px', cursor: 'pointer', borderRadius: '4px', fontSize: '13px', fontWeight: 'bold' }}
+                                  >
+                                    📥 Tải về
+                                  </button>
+                                )}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  );
+                })()}
               </div>
             )}
 

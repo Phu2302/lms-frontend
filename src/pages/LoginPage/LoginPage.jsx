@@ -77,8 +77,8 @@ function LoginPage() {
       // Điều hướng dựa trên role từ backend
       const userRole = String(res.data.user.role);
 
-      if ((targetService === 'Thông tin sinh viên' || targetService === 'Đăng ký in giấy xác nhận') && (userRole === '2' || userRole === '3')) {
-        setError('LỖI TRUY CẬP: Khu vực "Thông tin sinh viên" chỉ dành riêng cho Sinh Viên! Giảng viên và Admin không có quyền truy cập.');
+      if ((targetService === 'Thông tin sinh viên' || targetService === 'Đăng ký in giấy xác nhận') && userRole === '2') {
+        setError('LỖI TRUY CẬP: Khu vực "Thông tin sinh viên" không dành cho Giảng viên.');
         localStorage.removeItem('token');
         localStorage.removeItem('user');
         setLoading(false);
@@ -88,6 +88,9 @@ function LoginPage() {
       // Điều hướng động theo redirect parameter hoặc dịch vụ đã chọn
       if (redirectUrl) {
         navigate(redirectUrl);
+      } else if (userRole === '3') {
+        // Admin / Phòng Đào Tạo sẽ được chuyển thẳng tới Trang Quản Trị Hệ Thống
+        navigate('/admin');
       } else if (targetService === 'Các khóa học của tôi') {
         navigate('/lms/course');
       } else if (targetService === 'Thông tin sinh viên') {
@@ -119,6 +122,10 @@ function LoginPage() {
         <p style={{ fontSize: '13px', textAlign: 'center', color: '#666', marginBottom: '20px' }}>
           Đang xác thực để vào: <strong>{targetService}</strong>
         </p>
+
+        <div style={{ background: '#e8f5e9', color: '#005a2b', padding: '8px 12px', borderRadius: '6px', fontSize: '12px', marginBottom: '15px', border: '1px solid #c8e6c9', textAlign: 'center' }}>
+          ℹ️ <strong>Admin / Phòng Đào Tạo:</strong> Đăng nhập bằng tài khoản quản trị để tự động vào Trang Quản Trị Hệ Thống.
+        </div>
         
         {error && (
           <div style={{

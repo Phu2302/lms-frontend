@@ -72,14 +72,27 @@ function AssignmentDetail() {
     }
   };
 
+  const [submittedFileUrl, setSubmittedFileUrl] = useState('');
+
   const handleStudentSubmit = (e) => {
     e.preventDefault();
     if (!submissionLink && !submittedFile) {
       showToast('Vui lòng nhập link bài nộp hoặc chọn file!', 'error');
       return;
     }
-    setIsSubmitted(true);
-    showToast('Nộp bài tập thành công!', 'success');
+
+    if (submittedFile) {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        setSubmittedFileUrl(event.target.result);
+        setIsSubmitted(true);
+        showToast('Nộp bài tập thành công!', 'success');
+      };
+      reader.readAsDataURL(submittedFile);
+    } else {
+      setIsSubmitted(true);
+      showToast('Nộp bài tập thành công!', 'success');
+    }
   };
 
   const handleGradeChange = (studentId, field, value) => {
@@ -223,7 +236,19 @@ function AssignmentDetail() {
                 <tr>
                   <td className="label-cell">Trạng thái nộp bài</td>
                   <td className="value-cell">
-                    {isSubmitted ? <span style={{ color: '#008b44', fontWeight: 'bold' }}>Đã nộp bài thành công</span> : 'Chưa có bài nộp nào được tải lên'}
+                    {isSubmitted ? (
+                      <span style={{ color: '#008b44', fontWeight: 'bold' }}>
+                        🟢 Đã nộp bài thành công {submittedFile && (
+                          <a
+                            href={submittedFileUrl || '#'}
+                            download={submittedFile.name}
+                            style={{ marginLeft: '10px', color: '#2b6cb0', textDecoration: 'underline' }}
+                          >
+                            📄 Tải xuống file bài nộp ({submittedFile.name})
+                          </a>
+                        )}
+                      </span>
+                    ) : 'Chưa có bài nộp nào được tải lên'}
                   </td>
                 </tr>
                 <tr>
@@ -248,14 +273,20 @@ function AssignmentDetail() {
                 />
               </div>
               <div>
-                <label style={{ fontSize: '14px', fontWeight: 'bold', display: 'block', marginBottom: '5px' }}>Hoặc Chọn file bài tập từ máy tính:</label>
+                <label style={{ fontSize: '14px', fontWeight: 'bold', display: 'block', marginBottom: '5px' }}>Hoặc Chọn file bài tập từ máy tính (.PDF / .ZIP / .DOCX):</label>
                 <input 
                   type="file" 
                   onChange={(e) => setSubmittedFile(e.target.files[0])}
+                  style={{ width: '100%', padding: '6px', border: '1px solid #cbd5e0' }}
                 />
+                {submittedFile && (
+                  <div style={{ marginTop: '8px', fontSize: '13px', color: '#008b44', fontWeight: 'bold' }}>
+                    📎 Đã chọn: {submittedFile.name} ({(submittedFile.size / 1024).toFixed(0)} KB)
+                  </div>
+                )}
               </div>
               <button type="submit" className="submit-assignment-btn" style={{ alignSelf: 'flex-start' }}>
-                Nộp bài tập
+                📤 Nộp bài tập
               </button>
             </form>
           </div>

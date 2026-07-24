@@ -322,10 +322,45 @@ export function EditMaterialModal({ show, onClose, onSubmit, editingMaterial, se
             />
           </div>
           <div className="form-group">
-            <label>Đường dẫn liên kết (Link tải/Link xem):</label>
+            <label>Upload file PDF / Tài liệu từ máy tính:</label>
             <input
-              type="url"
-              value={editingMaterial.content_link}
+              type="file"
+              onChange={(e) => {
+                const file = e.target.files[0];
+                if (file) {
+                  const targetTitle = editingMaterial.title || file.name;
+                  if (!editingMaterial.title) {
+                    setEditingMaterial(prev => ({ ...prev, title: file.name }));
+                  }
+                  const reader = new FileReader();
+                  reader.onload = (evt) => {
+                    const dataUrl = evt.target.result;
+                    const matId = editingMaterial.material_id || editingMaterial.id;
+                    try {
+                      if (matId) localStorage.setItem(`lms_material_id_${matId}`, dataUrl);
+                      localStorage.setItem(`lms_file_${file.name}`, dataUrl);
+                      localStorage.setItem(`lms_file_${encodeURIComponent(file.name)}`, dataUrl);
+                      localStorage.setItem(`lms_file_${targetTitle}`, dataUrl);
+                      localStorage.setItem(`lms_file_${encodeURIComponent(targetTitle)}`, dataUrl);
+                      localStorage.setItem(`lms_file_last_uploaded`, dataUrl);
+                    } catch (err) {
+                      console.warn('LocalStorage full:', err);
+                    }
+                    setEditingMaterial(prev => ({ 
+                      ...prev, 
+                      content_link: dataUrl 
+                    }));
+                  };
+                  reader.readAsDataURL(file);
+                }
+              }}
+            />
+          </div>
+          <div className="form-group">
+            <label>Hoặc Nhập đường dẫn liên kết (Link Google Drive / Youtube / Web):</label>
+            <input
+              type="text"
+              value={editingMaterial.content_link || ''}
               onChange={(e) =>
                 setEditingMaterial({ ...editingMaterial, content_link: e.target.value })
               }

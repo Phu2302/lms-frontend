@@ -16,6 +16,7 @@ import CourseRegistration from './pages/CourseRegistration/CourseRegistration';
 import OnlineGrading from './pages/OnlineGrading/OnlineGrading';
 import TeachingSupport from './pages/TeachingSupport/TeachingSupport';
 import ProfilePage from './pages/ProfilePage/ProfilePage';
+import AdminPortal from './pages/AdminPortal/AdminPortal';
 
 import AddQuiz from './pages/LMS/CourseDetail/AddQuiz/AddQuiz';
 import EditQuiz from './pages/LMS/CourseDetail/EditQuiz/EditQuiz';
@@ -30,35 +31,42 @@ function App() {
     <AuthProvider>
       <ToastProvider>
         <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<HomePage />} />
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/lms" element={<LMS view="home" />} />
-          <Route path="/lms/course" element={<LMS view="courses" />} />
-          <Route path="/lms/course/:courseId" element={<CourseDetail />} />
-          <Route path="/lms/assignment/:assignmentId" element={<AssignmentDetail />} />
-          <Route path="/lms/quiz/:quizId" element={<QuizPage />} />
-          <Route path="/lms/schedule" element={<Schedule />} />
-          <Route path="/student-info" element={<StudentInfo />} />
-          <Route path="/lms/course/:courseId/forum/:forumId" element={<ForumPage />} />
-          <Route path="/lms/course/:courseId/forum-post/:postId" element={<ForumPostDetailPage />} />
-          <Route path="/lms/calendar" element={<CalendarPage />} />
-          <Route path="/course-registration" element={<CourseRegistration />} />
-          <Route path="/online-grading" element={<OnlineGrading />} />
-          <Route path="/teaching-support" element={<TeachingSupport />} />
-          <Route path="/profile" element={<ProfilePage />} />
+          <Routes>
+            <Route path="/" element={<HomePage />} />
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/lms" element={<LMS view="home" />} />
+            <Route path="/lms/course" element={<LMS view="courses" />} />
+            <Route path="/lms/course/:courseId" element={<CourseDetail />} />
+            <Route path="/lms/quiz/:quizId" element={<QuizPage />} />
+            <Route path="/lms/course/:courseId/quiz/:quizId" element={<QuizPage />} />
+            <Route path="/lms/course/:courseId/chapter/:chapterId/quiz/:quizId" element={<QuizPage />} />
 
-          {/* Dedicated pages for adding/editing Quiz, Material, Forum */}
-          <Route path="/lms/course/:courseId/chapter/:chapterId/add-quiz" element={<AddQuiz />} />
-          <Route path="/lms/course/:courseId/quiz/:quizId/edit" element={<EditQuiz />} />
-          <Route path="/lms/course/:courseId/chapter/:chapterId/add-material" element={<AddMaterial />} />
-          <Route path="/lms/course/:courseId/chapter/:chapterId/add-forum" element={<AddForum />} />
-        </Routes>
-      </BrowserRouter>
-    </ToastProvider>
-  </AuthProvider>
-);
+            <Route path="/lms/assignment/:assignmentId" element={<AssignmentDetail />} />
+            <Route path="/lms/course/:courseId/assignment/:assignmentId" element={<AssignmentDetail />} />
+
+            <Route path="/lms/schedule" element={<Schedule />} />
+            <Route path="/student-info" element={<StudentInfo />} />
+            <Route path="/lms/course/:courseId/forum/:forumId" element={<ForumPage />} />
+            <Route path="/lms/course/:courseId/chapter/:chapterId/forum/:forumId" element={<ForumPage />} />
+            <Route path="/lms/course/:courseId/forum-post/:postId" element={<ForumPostDetailPage />} />
+            <Route path="/lms/calendar" element={<CalendarPage />} />
+            <Route path="/course-registration" element={<CourseRegistration />} />
+            <Route path="/online-grading" element={<OnlineGrading />} />
+            <Route path="/teaching-support" element={<TeachingSupport />} />
+            <Route path="/profile" element={<ProfilePage />} />
+            <Route path="/admin" element={<AdminPortal />} />
+
+            {/* Dedicated pages for adding/editing Quiz, Material, Forum */}
+            <Route path="/lms/course/:courseId/chapter/:chapterId/add-quiz" element={<AddQuiz />} />
+            <Route path="/lms/course/:courseId/quiz/:quizId/edit" element={<EditQuiz />} />
+            <Route path="/lms/course/:courseId/chapter/:chapterId/add-material" element={<AddMaterial />} />
+            <Route path="/lms/course/:courseId/chapter/:chapterId/add-forum" element={<AddForum />} />
+          </Routes>
+        </BrowserRouter>
+      </ToastProvider>
+    </AuthProvider>
+  );
 }
 
 export default App;
-
+
